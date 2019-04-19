@@ -3,10 +3,10 @@
 // @name         Pogo Tools
 // @category     Layer
 // @namespace    https://gitlab.com/AlfonsoML/pogo-s2/
-// @downloadURL  https://gitlab.com/AlfonsoML/pogo-s2/raw/master/s2check.user.js
+// @downloadURL  https://gitlab.com/AlfonsoML/pogo-s2/raw/sync/s2check.user.js
 // @homepageURL  https://gitlab.com/AlfonsoML/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.79
+// @version      0.80
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://www.ingress.com/intel*
@@ -559,6 +559,7 @@ function wrapperPlugin(plugin_info) {
 		highlightGymCenter: false,
 		thisIsPogo: false,
 		analyzeForMissingData: true,
+		allowSync: false,
 		grids: [
 			{
 				level: 14,
@@ -598,15 +599,15 @@ function wrapperPlugin(plugin_info) {
 				color: '#000000',
 				opacity: 0.4
 			},
-			missingStops1:  {
+			missingStops1: {
 				color: '#BF360C',
 				opacity: 1
 			},
-			missingStops2:  {
+			missingStops2: {
 				color: '#E64A19',
 				opacity: 1
 			},
-			missingStops3:  {
+			missingStops3: {
 				color: '#FF5722',
 				opacity: 1
 			}
@@ -641,6 +642,9 @@ function wrapperPlugin(plugin_info) {
 		}
 		if (!settings.colors) {
 			settings.colors = defaultSettings.colors;
+		}
+		if (typeof settings.allowSync == 'undefined') {
+			settings.allowSync = defaultSettings.allowSync;
 		}
 		setThisIsPogo();
 	}
@@ -857,6 +861,7 @@ function wrapperPlugin(plugin_info) {
 			<p><label><input type="checkbox" id="chkHighlightCenters">Highlight centers of Cells with a Gym</label></p>
 			<p><label title='Hide Ingress panes, info and whatever that clutters the map and it is useless for Pokemon Go'><input type="checkbox" id="chkThisIsPogo">This is PoGo!</label></p>
 			<p><label title="Analyze the portal data to show the pane that suggests new Pokestops and Gyms"><input type="checkbox" id="chkanalyzeForMissingData">Analyze portal data</label></p>
+			<p><label title="Use the Sync plugin to synchronize Pokestops and Gyms between your devices"><input type="checkbox" id="chkAllowSync">Allow Sync</label></p>
 			<p><a id='PogoEditColors'>Colors</a></p>
 			 `;
 
@@ -909,8 +914,24 @@ function wrapperPlugin(plugin_info) {
 			}
 		});
 
+		const chkAllowSync = div.querySelector('#chkAllowSync');
+		chkAllowSync.checked = !!settings.allowSync;
+		chkAllowSync.addEventListener('change', e => {
+			if (!window.plugin.sync) {
+				alert('Sync plugin is not installed/enabled');
+				return;
+			}
+
+			settings.allowSync = chkAllowSync.checked;
+			saveSettings();
+			if (settings.allowSync && !thisPlugin.enableSync) {
+				thisPlugin.registerFieldForSyncing();
+			}
+			setThisIsPogo();
+		});
+
 		const PogoEditColors = div.querySelector('#PogoEditColors');
-		PogoEditColors.addEventListener('click', function(e) {
+		PogoEditColors.addEventListener('click', function (e) {
 			editColors();
 			e.preventDefault();
 			return false;
@@ -956,34 +977,34 @@ function wrapperPlugin(plugin_info) {
 
 		const div = container[0];
 
-		const updatedSetting = function(id) {
+		const updatedSetting = function (id) {
 			saveSettings();
 			if (id == 'nearbyCircleBorder' || id == 'nearbyCircleFill') {
-				redrawNearbyCircles()
+				redrawNearbyCircles();
 			} else {
 				updateMapGrid();
 			}
 		};
 
-		const configureItems = function(key, item, id) {
+		const configureItems = function (key, item, id) {
 			if (!id)
 				id = item;
 
 			const entry = settings[key][item];
 			const select = div.querySelector('#' + id + 'Opacity');
 			select.value = entry.opacity;
-			select.addEventListener('change', function(event) {
+			select.addEventListener('change', function (event) {
 				settings[key][item].opacity = select.value;
 				updatedSetting(id);
 			});
 
 			const input = div.querySelector('#' + id + 'Color');
 			input.value = entry.color;
-			input.addEventListener('change', function(event) {
+			input.addEventListener('change', function (event) {
 				settings[key][item].color = input.value;
 				updatedSetting(id);
 			});
-		}
+		};
 
 		configureItems('grids', 0, 'grid0');
 		configureItems('grids', 1, 'grid1');
@@ -1275,8 +1296,21 @@ function wrapperPlugin(plugin_info) {
 
 	/*********************************************************************************************************************/
 
+	thisPlugin.syncData = {};
+	//delay in ms
+	thisPlugin.SYNC_DELAY = 5000;
+	thisPlugin.enableSync = false;
+	thisPlugin.updateQueue = {};
+	thisPlugin.updatingQueue = {};
+
+	thisPlugin.FIELDS = {
+		'syncData': 'plugin-pogo-data',
+		'updateQueue': 'plugin-pogo-data-queue',
+		'updatingQueue': 'plugin-pogo-data-updating-queue',
+	};
+
 	// Update the localStorage
-	thisPlugin.saveStorage = function () {
+	thisPlugin.saveStorage = function (dontSync) {
 		localStorage[KEY_STORAGE] = JSON.stringify({
 			gyms: cleanUpExtraData(gyms), 
 			pokestops: cleanUpExtraData(pokestops), 
@@ -1284,6 +1318,10 @@ function wrapperPlugin(plugin_info) {
 			ignoredCellsExtraGyms: ignoredCellsExtraGyms,
 			ignoredCellsMissingGyms: ignoredCellsMissingGyms
 		});
+		if (dontSync)
+			return;
+
+		thisPlugin.sync();
 	};
 
 	/**
@@ -3088,6 +3126,148 @@ img.photo,
 		document.body.classList.toggle('smallpokestops', zoom < 16);
 	}
 
+	// ----------------- SYNC ----------------------
+
+	// stores data for sync
+	thisPlugin.sync = function (guid) {
+
+		thisPlugin.syncData = {
+			gyms: cleanUpExtraData(gyms), 
+			pokestops: cleanUpExtraData(pokestops), 
+			notpogo: cleanUpExtraData(notpogo),
+			ignoredCellsExtraGyms: ignoredCellsExtraGyms,
+			ignoredCellsMissingGyms: ignoredCellsMissingGyms
+		};
+
+		thisPlugin.updateQueue = thisPlugin.syncData;
+		thisPlugin.storeLocal('syncData');
+		thisPlugin.storeLocal('updateQueue');
+
+		thisPlugin.syncQueue();
+	};
+
+	// sync the queue, but delay the actual sync to group a few updates in a single request
+	thisPlugin.syncQueue = function () {
+		if (!thisPlugin.enableSync || !settings.allowSync) 
+			return;
+		
+		clearTimeout(thisPlugin.syncTimer);
+		
+		thisPlugin.syncTimer = setTimeout(function () {
+			thisPlugin.syncTimer = null;
+			console.log('syncQueue');
+console.log(thisPlugin.syncData);
+console.log(thisPlugin.updateQueue);
+console.log(thisPlugin.updatingQueue);
+			$.extend(thisPlugin.updatingQueue, thisPlugin.updateQueue);
+			thisPlugin.updateQueue = {};
+
+			thisPlugin.storeLocal('updatingQueue');
+			thisPlugin.storeLocal('updateQueue');
+
+			window.plugin.sync.updateMap('pogo', 'syncData', Object.keys(thisPlugin.updatingQueue));
+
+		}, thisPlugin.SYNC_DELAY);
+	};
+
+	// Call after IITC and all plugin loaded
+	thisPlugin.registerFieldForSyncing = function () {
+		if (!window.plugin.sync || !settings.allowSync) 
+			return;
+
+		window.plugin.sync.registerMapForSync('pogo', 'syncData', thisPlugin.syncCallback, thisPlugin.syncInitialed);
+	};
+
+	// Call after local or remote change uploaded
+	thisPlugin.syncCallback = function (pluginName, fieldName, e, fullUpdated) {
+		console.log('syncCallback', pluginName, fieldName, e, fullUpdated);
+		if (fieldName === 'syncData') {
+console.log(thisPlugin.syncData);
+console.log(thisPlugin.updateQueue);
+console.log(thisPlugin.updatingQueue);
+
+			thisPlugin.resetAllMarkers();
+			gyms = thisPlugin.syncData.gyms;
+			pokestops = thisPlugin.syncData.pokestops;
+			notpogo = thisPlugin.syncData.notpogo;
+			ignoredCellsExtraGyms = thisPlugin.syncData.ignoredCellsExtraGyms;
+			ignoredCellsMissingGyms = thisPlugin.syncData.ignoredCellsMissingGyms;
+			thisPlugin.saveStorage(true);
+			updateMapGrid();
+
+			thisPlugin.storeLocal('syncData');
+			// All data is replaced if other client update the data during this client
+			// offline,
+			// fire 'pluginUniquesRefreshAll' to notify a full update
+			if (fullUpdated) {
+				updateMapGrid();
+		/*
+				// a full update - update the selected portal sidebar
+				if (window.selectedPortal) {
+					thisPlugin.updateCheckedAndHighlight(window.selectedPortal);
+				}
+				// and also update all highlights, if needed
+				if (thisPlugin.isHighlightActive) {
+					resetHighlightedPortals();
+				}
+		*/
+
+				return;
+			}
+
+			if (!e) 
+				return;
+			console.log(e);
+			if (e.isLocal) {
+				// Update pushed successfully, remove it from updatingQueue
+				delete thisPlugin.updatingQueue[e.property];
+			} else {
+				// Remote update
+				delete thisPlugin.updateQueue[e.property];
+				thisPlugin.storeLocal('updateQueue');
+			}
+		}
+	};
+
+	// Syncing of the field is initialed, upload all queued update
+	thisPlugin.syncInitialed = function (pluginName, fieldName) {
+		console.log('syncInitialed', pluginName, fieldName);
+
+		if (fieldName === 'syncData') {
+			thisPlugin.enableSync = true;
+			if (Object.keys(thisPlugin.updateQueue).length > 0) {
+				thisPlugin.syncQueue();
+			}
+		}
+	};
+
+	thisPlugin.storeLocal = function (name) {
+		const key = thisPlugin.FIELDS[name];
+		if (key === undefined) 
+			return;
+
+		const value = thisPlugin[name];
+
+		if (typeof value !== 'undefined' && value !== null) {
+			localStorage[key] = JSON.stringify(value);
+		} else {
+			localStorage.removeItem(key);
+		}
+	};
+
+	thisPlugin.loadLocal = function (name) {
+		const key = thisPlugin.FIELDS[name];
+		if (key === undefined) 
+			return;
+
+		const objectJSON = localStorage[key];
+		if (!objectJSON) 
+			return;
+		thisPlugin[name] = JSON.parse(objectJSON);
+	};
+
+	// /----------------- SYNC ----------------------/
+
 	const setup = function () {
 		thisPlugin.isSmart = window.isSmartphone();
 
@@ -3192,6 +3372,8 @@ img.photo,
 				a.id = 'artifactLink';
 			}
 		});
+
+		window.addHook('iitcLoaded', thisPlugin.registerFieldForSyncing);
 
 	};
 
