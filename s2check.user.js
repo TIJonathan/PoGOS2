@@ -176,38 +176,6 @@
 		];
 	}
 
-	// hilbert space-filling curve
-	// based on http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
-	// note: rather then calculating the final integer hilbert position, we just return the list of quads
-	// this ensures no precision issues whth large orders (S3 cell IDs use up to 30), and is more
-	// convenient for pulling out the individual bits as needed later
-	function pointToHilbertQuadList(x,y,order) {
-		const hilbertMap = {
-			'a': [[0,'d'], [1,'a'], [3,'b'], [2,'a']],
-			'b': [[2,'b'], [1,'b'], [3,'a'], [0,'c']],
-			'c': [[2,'c'], [3,'d'], [1,'c'], [0,'b']],
-			'd': [[0,'a'], [3,'c'], [1,'d'], [2,'d']]
-		};
-
-		let currentSquare = 'a';
-		const positions = [];
-
-		for (let i = order - 1; i >= 0; i--) {
-
-			const mask = 1 << i;
-
-			const quad_x = x & mask ? 1 : 0;
-			const quad_y = y & mask ? 1 : 0;
-			const t = hilbertMap[currentSquare][quad_x * 2 + quad_y];
-
-			positions.push(t[0]);
-
-			currentSquare = t[1];
-		}
-
-		return positions;
-	}
-
 	// S2Cell class
 	S2.S2Cell = function () {};
 
@@ -259,12 +227,6 @@
 		});
 	};
 
-	S2.S2Cell.prototype.getFaceAndQuads = function () {
-		const quads = pointToHilbertQuadList(this.ij[0], this.ij[1], this.level);
-
-		return [this.face, quads];
-	};
-
 	S2.S2Cell.prototype.getNeighbors = function (deltas) {
 
 		const fromFaceIJWrap = function (face,ij,level) {
@@ -273,10 +235,10 @@
 				// no wrapping out of bounds
 				return S2.S2Cell.FromFaceIJ(face,ij,level);
 			}
+
 			// the new i,j are out of range.
 			// with the assumption that they're only a little past the borders we can just take the points as
 			// just beyond the cube face, project to XYZ, then re-create FaceUV from the XYZ vector
-
 			let st = IJToST(ij,level,[0.5, 0.5]);
 			let uv = STToUV(st);
 			let xyz = FaceUVToXYZ(face, uv);
@@ -304,14 +266,6 @@
 		return deltas.map(function (values) {
 			return fromFaceIJWrap(face, [i + values.a, j + values.b], level);
 		});
-		/*
-		return [
-			fromFaceIJWrap(face, [i - 1, j], level),
-			fromFaceIJWrap(face, [i, j - 1], level),
-			fromFaceIJWrap(face, [i + 1, j], level),
-			fromFaceIJWrap(face, [i, j + 1], level)
-		];
-		*/
 	};
 }
 
@@ -502,6 +456,23 @@ function wrapperPlugin(plugin_info) {
 		});
 	}
 
+
+	const TIMERS = {};
+	function createThrottledTimer(name, callback, ms) {
+		if (TIMERS[name])
+			clearTimeout(TIMERS[name]);
+
+		// throttle if there are several calls to the functions
+		TIMERS[name] = setTimeout(function() {
+			delete TIMERS[name];
+			// and even now, wait for iddle
+			requestIdleCallback(function() {
+				callback();
+			}, { timeout: 2000 });
+
+		}, ms || 100);
+	}
+
 	/**
 	 * Try to identify if the browser is IITCm due to special bugs like file picker not working
 	 */
@@ -560,6 +531,8 @@ function wrapperPlugin(plugin_info) {
 		thisIsPogo: false,
 		analyzeForMissingData: true,
 		allowSync: false,
+		deltaSyncUrl: '',
+		lastDeltaSync: 0,
 		grids: [
 			{
 				level: 14,
@@ -617,7 +590,9 @@ function wrapperPlugin(plugin_info) {
 	let settings = defaultSettings;
 
 	function saveSettings() {
-		localStorage['s2check_settings'] = JSON.stringify(settings);
+		createThrottledTimer('saveSettings', function() {
+			localStorage['s2check_settings'] = JSON.stringify(settings);
+		});
 	}
 
 	function loadSettings() {
@@ -646,7 +621,17 @@ function wrapperPlugin(plugin_info) {
 		if (typeof settings.allowSync == 'undefined') {
 			settings.allowSync = defaultSettings.allowSync;
 		}
+		if (typeof settings.deltaSyncUrl == 'undefined') {
+			settings.deltaSyncUrl = defaultSettings.deltaSyncUrl;
+		}
+		if (typeof settings.lastDeltaSync == 'undefined') {
+			settings.lastDeltaSync = defaultSettings.lastDeltaSync;
+		}
 		setThisIsPogo();
+
+		if (settings.deltaSyncUrl != '') {
+			setTimeout(getDeltaSyncData, thisPlugin.SYNC_DELAY);
+		}
 	}
 
 	let originalHighlightPortal;
@@ -861,7 +846,8 @@ function wrapperPlugin(plugin_info) {
 			<p><label><input type="checkbox" id="chkHighlightCenters">Highlight centers of Cells with a Gym</label></p>
 			<p><label title='Hide Ingress panes, info and whatever that clutters the map and it is useless for Pokemon Go'><input type="checkbox" id="chkThisIsPogo">This is PoGo!</label></p>
 			<p><label title="Analyze the portal data to show the pane that suggests new Pokestops and Gyms"><input type="checkbox" id="chkanalyzeForMissingData">Analyze portal data</label></p>
-			<p><label title="Use the Sync plugin to synchronize Pokestops and Gyms between your devices"><input type="checkbox" id="chkAllowSync">Allow Sync</label></p>
+			<p><label title="Use the Sync plugin to synchronize Pokestops and Gyms between your devices"><input type="checkbox" id="chkAllowSync">Sync data in private GDrive</label></p>
+			<p><label title="Url to GSheet to share changes of pogo data">Url to share public data with GSheets<br> <input type="text" id="txtDeltaSyncUrl"></label></p>
 			<p><a id='PogoEditColors'>Colors</a></p>
 			 `;
 
@@ -928,6 +914,17 @@ function wrapperPlugin(plugin_info) {
 				thisPlugin.registerFieldForSyncing();
 			}
 			setThisIsPogo();
+		});
+
+		const txtDeltaSyncUrl = div.querySelector('#txtDeltaSyncUrl');
+		txtDeltaSyncUrl.value = settings.deltaSyncUrl;
+		txtDeltaSyncUrl.addEventListener('change', e => {
+			settings.deltaSyncUrl = txtDeltaSyncUrl.value;
+			saveSettings();
+
+			if (settings.delta.SyncUrl != '') {
+				setTimeout(getDeltaSyncData, thisPlugin.SYNC_DELAY);
+			}
 		});
 
 		const PogoEditColors = div.querySelector('#PogoEditColors');
@@ -1311,13 +1308,16 @@ function wrapperPlugin(plugin_info) {
 
 	// Update the localStorage
 	thisPlugin.saveStorage = function (dontSync) {
-		localStorage[KEY_STORAGE] = JSON.stringify({
-			gyms: cleanUpExtraData(gyms), 
-			pokestops: cleanUpExtraData(pokestops), 
-			notpogo: cleanUpExtraData(notpogo),
-			ignoredCellsExtraGyms: ignoredCellsExtraGyms,
-			ignoredCellsMissingGyms: ignoredCellsMissingGyms
+		createThrottledTimer('saveStorage', function() {
+			localStorage[KEY_STORAGE] = JSON.stringify({
+				gyms: cleanUpExtraData(gyms), 
+				pokestops: cleanUpExtraData(pokestops), 
+				notpogo: cleanUpExtraData(notpogo),
+				ignoredCellsExtraGyms: ignoredCellsExtraGyms,
+				ignoredCellsMissingGyms: ignoredCellsMissingGyms
+			});
 		});
+
 		if (dontSync)
 			return;
 
@@ -1351,20 +1351,14 @@ function wrapperPlugin(plugin_info) {
 
 	// Load the localStorage
 	thisPlugin.loadStorage = function () {
-		const tmp = JSON.parse(localStorage[KEY_STORAGE]);	
-		gyms = tmp.gyms;
-		pokestops = tmp.pokestops;
+		const tmp = JSON.parse(localStorage[KEY_STORAGE] || '{}');	
+		gyms = tmp.gyms || {};
+		pokestops = tmp.pokestops || {};
 		notpogo = tmp.notpogo || {};
 		ignoredCellsExtraGyms = tmp.ignoredCellsExtraGyms || {};
 		ignoredCellsMissingGyms = tmp.ignoredCellsMissingGyms || {};
 	};
 
-	thisPlugin.createStorage = function () {
-		if (!localStorage[KEY_STORAGE]) {
-			thisPlugin.saveStorage();
-		}
-	};
-	
 	thisPlugin.createEmptyStorage = function () {
 		gyms = {};
 		pokestops = {};
@@ -1496,6 +1490,29 @@ function wrapperPlugin(plugin_info) {
 		}
 	};
 
+	function removePogoObject(type, guid) {
+		let data = {};
+		if (type === 'pokestops') {
+			data = pokestops[guid];
+			delete pokestops[guid];
+			const starInLayer = stopLayers[guid];
+			stopLayerGroup.removeLayer(starInLayer);
+			delete stopLayers[guid];
+		}
+		if (type === 'gyms') {
+			data = gyms[guid];
+			delete gyms[guid];
+			const gymInLayer = gymLayers[guid];
+			gymLayerGroup.removeLayer(gymInLayer);
+			delete gymLayers[guid];
+		}
+		if (type === 'notpogo') {
+			data = notpogo[guid];
+			delete notpogo[guid];
+		}
+		thisPlugin.updatePogoObject(guid, data.lat, data.lng, data.name, 'none');
+	}
+
 	// Switch the status of the star
 	thisPlugin.switchStarPortal = function (type) {
 		const guid = window.selectedPortal;
@@ -1507,29 +1524,22 @@ function wrapperPlugin(plugin_info) {
 		// If portal is saved in pogo: Remove this pogo
 		const pogoData = thisPlugin.findByGuid(guid);
 		if (pogoData) {
-			delete pogoData.store[guid];
 			const existingType = pogoData.type;
+			removePogoObject(existingType, guid);
 
 			thisPlugin.saveStorage();
 			thisPlugin.updateStarPortal();
 	
-			if (existingType === 'pokestops') {
-				const starInLayer = stopLayers[guid];
-				stopLayerGroup.removeLayer(starInLayer);
-				delete stopLayers[guid];
-			}
-			if (existingType === 'gyms') {
-				const gymInLayer = gymLayers[guid];
-				gymLayerGroup.removeLayer(gymInLayer);
-				delete gymLayers[guid];
-			}
-
 			// Get portal name and coordinates
 			const p = window.portals[guid];
 			const ll = p.getLatLng();
 			if (existingType !== type) {
 				thisPlugin.addPortalpogo(guid, ll.lat, ll.lng, p.options.data.title, type);
+			} else {
+				// it has been removed
+				thisPlugin.updatePogoObject(guid, ll.lat, ll.lng, p.options.data.title, 'none');
 			}
+
 			// we've changed one item from pogo, if the cell was marked as ignored, reset it.
 			if (updateExtraGymsCells(ll.lat, ll.lng))
 				thisPlugin.saveStorage();
@@ -1547,8 +1557,21 @@ function wrapperPlugin(plugin_info) {
 		}
 	};
 
+	let updatedPogoObjects = {};
+	let isSynchronizing = false;
+
+	thisPlugin.updatePogoObject = function(guid, lat, lng, name, type) {
+		if (isSynchronizing)
+			return;
+		const obj = {'guid': guid, 'lat': lat, 'lng': lng, 'title': name, 'type': type};
+		updatedPogoObjects[guid] = obj;
+		thisPlugin.initDeltaSync();
+	};
+	
 	// Add portal
 	thisPlugin.addPortalpogo = function (guid, lat, lng, name, type) {
+		thisPlugin.updatePogoObject(guid, lat, lng, name, type);
+
 		// Add pogo in the localStorage
 		const obj = {'guid': guid, 'lat': lat, 'lng': lng, 'name': name};
 
@@ -1678,6 +1701,12 @@ function wrapperPlugin(plugin_info) {
 			thisPlugin.createEmptyStorage();
 			thisPlugin.updateStarPortal();
 			thisPlugin.resetAllMarkers();
+			// get all the sync data
+			if (settings.lastDeltaSync > 0) {
+				settings.lastDeltaSync = 0;
+				saveSettings();
+			}
+
 			if (settings.highlightGymCandidateCells) {
 				updateMapGrid();
 			}
@@ -2617,18 +2646,7 @@ img.photo,
 
 		const existingType = pogoData.type;
 		// remove marker
-		if (existingType == 'pokestops') {
-			const starInLayer = stopLayers[pogoGuid];
-			stopLayerGroup.removeLayer(starInLayer);
-			delete stopLayers[pogoGuid];
-		}
-		if (existingType == 'gyms') {
-			const gymInLayer = gymLayers[pogoGuid];
-			gymLayerGroup.removeLayer(gymInLayer);
-			delete gymLayers[pogoGuid];
-		}
-
-		delete pogoData.store[pogoGuid];
+		removePogoObject(existingType, guid);
 
 		// Draw new marker
 		thisPlugin.addPortalpogo(guid, portal.lat, portal.lng, portal.name || pogoData.name, existingType);
@@ -2665,18 +2683,7 @@ img.photo,
 			const existingType = pogoData.type;
 
 			// remove marker
-			if (existingType === 'pokestops') {
-				const starInLayer = stopLayers[guid];
-				stopLayerGroup.removeLayer(starInLayer);
-				delete stopLayers[guid];
-			}
-			if (existingType === 'gyms') {
-				const gymInLayer = gymLayers[guid];
-				gymLayerGroup.removeLayer(gymInLayer);
-				delete gymLayers[guid];
-			}
-
-			delete pogoData.store[guid];
+			removePogoObject(existingType, guid);
 			thisPlugin.saveStorage();
 
 			if (settings.highlightGymCandidateCells) {
@@ -2894,10 +2901,7 @@ img.photo,
 			const guid = row.getAttribute('data-guid');
 			const portal = pokestops[guid];
 
-			delete pokestops[guid];
-			const starInLayer = stopLayers[guid];
-			stopLayerGroup.removeLayer(starInLayer);
-			delete stopLayers[guid];
+			removePogoObject('pokestops', guid);
 
 			thisPlugin.addPortalpogo(guid, portal.lat, portal.lng, portal.name, type);
 			if (settings.highlightGymCandidateCells) {
@@ -3127,6 +3131,78 @@ img.photo,
 	}
 
 	// ----------------- SYNC ----------------------
+	// sync the queue, but delay the actual sync to group a few updates in a single request
+	thisPlugin.initDeltaSync = function () {
+		createThrottledTimer('deltaSync', function () {
+
+console.log(updatedPogoObjects);
+//			thisPlugin.storeLocal('updatedPogoObjects');
+
+			var guids = Object.keys(updatedPogoObjects);
+			guids.forEach(function(guid) {
+				const change = updatedPogoObjects[guid];
+				let formData = new FormData();
+				Object.keys(change).forEach(field => formData.append(field, change[field]));
+				formData.append('nickname', window.PLAYER.nickname);
+				$.ajax({
+						url: settings.deltaSyncUrl,
+						type: 'POST',
+						data: formData,
+						processData: false,
+						contentType: false,
+						success: function (data, status, header) {
+							console.log('response', data);
+							delete updatedPogoObjects[guid];
+						},
+					error: function (x, y, z) {
+						console.log('POST ajax Error', x, y, z);
+					}
+				});
+			});
+
+		});
+	};
+
+	function getDeltaSyncData() {
+		if (!settings.deltaSyncUrl) 
+			return;
+
+		$.ajax({
+				url: settings.deltaSyncUrl + '?since=' + settings.lastDeltaSync,
+				type: 'GET',
+				processData: false,
+				contentType: false,
+				success: function (data, status, header) {
+					console.log('response', data);
+					isSynchronizing = true;
+					for (let i = 0; i < data.length; i++) {
+						const change = data[i];
+						if (settings.lastDeltaSync < change.lastupdate)
+							settings.lastDeltaSync = change.lastupdate;
+						
+						const guid = change.guid;
+						const pogoData = thisPlugin.findByGuid(guid);
+						if (pogoData) {
+							if (pogoData.type !== change.type) {
+								removePogoObject(pogoData.type, guid);
+								thisPlugin.addPortalpogo(guid, change.lat, change.lng, change.title, change.type)
+							} else {
+								pogoData.store[guid].lat = change.lat;
+								pogoData.store[guid].lng = change.lng;
+							}
+						} else {
+							thisPlugin.addPortalpogo(guid, change.lat, change.lng, change.title, change.type)
+						}
+					}
+					isSynchronizing = false;
+					saveSettings();
+					thisPlugin.saveStorage();
+				},
+			error: function (x, y, z) {
+				console.log('GET ajax Error', x, y, z);
+			}
+		});
+	}
 
 	// stores data for sync
 	thisPlugin.sync = function (guid) {
@@ -3275,9 +3351,6 @@ console.log(thisPlugin.updatingQueue);
 
 		loadSettings();
 
-		// If the storage not exists or is a old version
-		thisPlugin.createStorage();
-
 		// Load data from localStorage
 		thisPlugin.loadStorage();
 
@@ -3420,13 +3493,14 @@ console.log(thisPlugin.updatingQueue);
 	// PLUGIN END //////////////////////////////////////////////////////////
 
 	setup.info = plugin_info; //add the script info data to the function as a property
-	if (!window.bootPlugins) {
-		window.bootPlugins = [];
-	}
-	window.bootPlugins.push(setup);
 	// if IITC has already booted, immediately run the 'setup' function
-	if (window.iitcLoaded && typeof setup === 'function') {
+	if (window.iitcLoaded) {
 		setup();
+	} else {
+		if (!window.bootPlugins) {
+			window.bootPlugins = [];
+		}
+		window.bootPlugins.push(setup);
 	}
 }
 
