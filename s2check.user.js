@@ -6,7 +6,7 @@
 // @downloadURL  https://gitlab.com/AlfonsoML/pogo-s2/raw/sync/s2check.user.js
 // @homepageURL  https://gitlab.com/AlfonsoML/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.80
+// @version      0.85
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://www.ingress.com/intel*
@@ -465,10 +465,13 @@ function wrapperPlugin(plugin_info) {
 		// throttle if there are several calls to the functions
 		TIMERS[name] = setTimeout(function() {
 			delete TIMERS[name];
-			// and even now, wait for iddle
-			requestIdleCallback(function() {
+			if (typeof window.requestIdleCallback == 'undefined')
 				callback();
-			}, { timeout: 2000 });
+			else
+				// and even now, wait for iddle
+				requestIdleCallback(function() {
+					callback();
+				}, { timeout: 2000 });
 
 		}, ms || 100);
 	}
@@ -609,29 +612,22 @@ function wrapperPlugin(plugin_info) {
 		if (typeof settings.promptForMissingData != 'undefined') {
 			delete settings.promptForMissingData;
 		}
-		if (!settings.grids[0].color) {
-			settings.grids[0].color = defaultSettings.grids[0].color;
-			settings.grids[0].opacity = defaultSettings.grids[0].opacity;
-			settings.grids[1].color = defaultSettings.grids[1].color;
-			settings.grids[1].opacity = defaultSettings.grids[1].opacity;
-		}
 		if (!settings.colors) {
-			settings.colors = defaultSettings.colors;
-		}
-		if (typeof settings.allowSync == 'undefined') {
-			settings.allowSync = defaultSettings.allowSync;
-		}
-		if (typeof settings.deltaSyncUrl == 'undefined') {
-			settings.deltaSyncUrl = defaultSettings.deltaSyncUrl;
-		}
-		if (typeof settings.lastDeltaSync == 'undefined') {
-			settings.lastDeltaSync = defaultSettings.lastDeltaSync;
+			resetColors();
 		}
 		setThisIsPogo();
 
 		if (settings.deltaSyncUrl != '') {
 			setTimeout(getDeltaSyncData, thisPlugin.SYNC_DELAY);
 		}
+	}
+
+	function resetColors() {
+		settings.grids[0].color = defaultSettings.grids[0].color;
+		settings.grids[0].opacity = defaultSettings.grids[0].opacity;
+		settings.grids[1].color = defaultSettings.grids[1].color;
+		settings.grids[1].opacity = defaultSettings.grids[1].opacity;
+		settings.colors = defaultSettings.colors;
 	}
 
 	let originalHighlightPortal;
@@ -962,7 +958,8 @@ function wrapperPlugin(plugin_info) {
 			selectRow.replace('{{title}}', 'Fill of too close circles').replace(/{{id}}/g, 'nearbyCircleFill') +
 			selectRow.replace('{{title}}', '1 more stop to get a gym').replace(/{{id}}/g, 'missingStops1') +
 			selectRow.replace('{{title}}', '2 more stops to get a gym').replace(/{{id}}/g, 'missingStops2') +
-			selectRow.replace('{{title}}', '3 more stops to get a gym').replace(/{{id}}/g, 'missingStops3')
+			selectRow.replace('{{title}}', '3 more stops to get a gym').replace(/{{id}}/g, 'missingStops3') +
+			'<a id="resetColorsLink">Reset all colors</a>'
 			;
 
 		const container = dialog({
@@ -1014,6 +1011,15 @@ function wrapperPlugin(plugin_info) {
 		configureItems('colors', 'missingStops1');
 		configureItems('colors', 'missingStops2');
 		configureItems('colors', 'missingStops3');
+
+		const resetColorsLink = div.querySelector('#resetColorsLink');
+		resetColorsLink.addEventListener('click', function() {
+			container.dialog('close');
+			resetColors();
+			updatedSetting('nearbyCircleBorder');
+			updatedSetting();
+			editColors();
+		});
 	}
 
 	/**
@@ -2252,12 +2258,25 @@ img.photo,
 		if (!settings.analyzeForMissingData)
 			return;
 
-		if (checkNewPortalsTimout) {
-			clearTimeout(checkNewPortalsTimout);
-		} else {
-			document.getElementById('sidebarPogo').classList.add('refreshingPortalCount');
-		}	
-		checkNewPortalsTimout = setTimeout(checkNewPortals, 1000);
+		// workaround for https://bugs.chromium.org/p/chromium/issues/detail?id=961199
+		try
+		{
+			if (checkNewPortalsTimout) {
+				clearTimeout(checkNewPortalsTimout);
+			} else {
+				document.getElementById('sidebarPogo').classList.add('refreshingPortalCount');
+			}	
+		} catch (e) {
+			// nothing
+		}
+
+		// workaround for https://bugs.chromium.org/p/chromium/issues/detail?id=961199
+		try
+		{
+			checkNewPortalsTimout = setTimeout(checkNewPortals, 1000);
+		} catch (e) {
+			checkNewPortals();
+		}
 	}
 
 	/**
@@ -2541,7 +2560,7 @@ img.photo,
 		container.on('click', 'a', function (e) {
 			const type = this.getAttribute('data-type');
 			const guid = this.parentNode.getAttribute('data-guid');
-			const portal = newPortals[guid];
+			const portal = getPortalSummaryFromGuid(guid);
 			thisPlugin.addPortalpogo(guid, portal.lat, portal.lng, portal.name, type);
 			if (settings.highlightGymCandidateCells) {
 				updateMapGrid();
@@ -2791,6 +2810,25 @@ img.photo,
 		}, 2000);
 	}
 
+	function getPortalSummaryFromGuid(guid) {
+		const newPortal = newPortals[guid];
+		if (newPortal)
+			return newPortal;
+
+		const portal = window.portals[guid];
+		if (!portal)
+			return {};
+
+		return {
+			guid: guid,
+			name: portal.options.data.title,
+			lat: portal._latlng.lat,
+			lng: portal._latlng.lng,
+			image: portal.options.data.image,
+			cells: {}
+		};
+	}
+
 	function getPortalImage(pokestop) {
 		if (pokestop.image)
 			return '<img src="' + pokestop.image.replace('http:', 'https:') + '" class="photo">';
@@ -3020,6 +3058,10 @@ img.photo,
 
 		const enabled = map._layers[layerId] != null;
 		if (enabled) {
+			// Don't remove base layer if it's used
+			if (isBase)
+				return;
+
 			map.removeLayer(leafletLayer);
 		}
 		if (typeof leafletLayer.off != 'undefined')
@@ -3514,7 +3556,7 @@ if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) {
 }
 
 // Greasemonkey. It will be quite hard to debug
-if (typeof unsafeWindow != 'undefined') {
+if (typeof unsafeWindow != 'undefined' || typeof GM_info == 'undefined' || GM_info.scriptHandler != 'Tampermonkey') {
 	// inject code into site context
 	const script = document.createElement('script');
 	script.appendChild(document.createTextNode('(' + wrapperS2 + ')();'));
