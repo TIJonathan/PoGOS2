@@ -906,7 +906,7 @@
 			select.value = settings.grids[i].level;
 			select.addEventListener('change', e => {
 				settings.grids[i].level = parseInt(select.value, 10);
-				if (i==1)
+				if (i == 1)
 					resetGrouping();
 
 				saveSettings();
@@ -1332,7 +1332,7 @@
 						gridLayerGroup.addLayer(drawCell(cell, color, width, opacity));
 
 						// show number of PoI in the cell
-						var cellGroup = cellsPortals[cellStr];
+						const cellGroup = cellsPortals[cellStr];
 						if (cellGroup)
 							countLayer.addLayer(writeInCell(cell, Object.keys(cellGroup.portals).length));
 
@@ -1429,7 +1429,6 @@
 			// the level 6 cells have noticible errors with non-geodesic lines - and the larger level 4 cells are worse
 			// NOTE: we only draw two of the edges. as we draw all cells on screen, the other two edges will either be drawn
 			// from the other cell, or be off screen so we don't care
-			const region = L.polyline([corners[0], corners[1], corners[2], corners[3], corners[0]], {fill: false, color: color, opacity: opacity, weight: weight, clickable: false, interactive: false});
 			const region = L.geodesicPolyline([corners[0], corners[1], corners[2], corners[3], corners[0]], {fill: false, color: color, opacity: opacity, weight: weight, clickable: false, interactive: false});
 
 			return region;
