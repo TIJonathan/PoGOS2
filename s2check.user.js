@@ -2251,6 +2251,7 @@
 		.thisIsPogo .mods,
 		.thisIsPogo #randdetails,
 		.thisIsPogo #resodetails,
+		.thisIsPogo #historydetails,
 		.thisIsPogo #level {
 			display: none;
 		}
