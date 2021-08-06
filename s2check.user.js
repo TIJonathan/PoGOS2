@@ -2125,405 +2125,405 @@
 
 		thisPlugin.setupCSS = function () {
 			$('<style>').prop('type', 'text/css').html(`
-	#sidebar #portaldetails h3.title{
-		width:auto;
-	}
-	.pogoStop span,
-	.pogoGym span {
-		display:inline-block;
-		float:left;
-		margin:3px 1px 0 4px;
-		width:16px;
-		height:15px;
-		overflow:hidden;
-		background-repeat:no-repeat;
-	}
-	.pogoStop span, .pogoStop.favorite:focus span,
-	.pogoGym span, .pogoGym.favorite:focus span {
-		background-position:left top;
-	}
-	.pogoStop:focus span, .pogoStop.favorite span,
-	.pogoGym:focus span, .pogoGym.favorite span {
-		background-position:right top;
-	}
-
-	/**********************************************
-		DIALOG BOX
-	**********************************************/
-
-	/*---- Options panel -----*/
-	#pogoSetbox a{
-		display:block;
-		color:#ffce00;
-		border:1px solid #ffce00;
-		padding:3px 0;
-		margin:10px auto;
-		width:80%;
-		text-align:center;
-		background:rgba(8,48,78,.9);
-	}
-	#pogoSetbox a.disabled,
-	#pogoSetbox a.disabled:hover{
-		color:#666;
-		border-color:#666;
-		text-decoration:none;
-	}
-
-	#pogoSetbox{
-		text-align:center;
-	}
-	.pogoStop span {
-		background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAACZFBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAQECAAAAAAAGAQEAAAAPDw8AAAAMAgIAAAALAQEBAQETAwMAAAAGBQUMAgISEhIAAAAWFhYBAQEWAwMAAAACAgIDAwMFBQUGBgYJCQkPDw8REREVGBgWFhYXFxchISEiIiIkICAoKCgpICAtLCwtLi4uBQUuKysuLy8vEBAvMjEyMDAzMzM0NDQ4ODg5OTk6Ojo+Pj5AQUFBS0tCSEhDQ0NISEhJSUlMTExSUlJUVFRWVlZXV1dYCwtZCwtaWlpcXFxeXl5gYGBhBgZiYmJjY2NlDAxmDAxnZ2doaGhra2tsbGxtbW1wcHBwfHtxcXFycnJ0dHR1dXV2dnZ4CQl5eXl9fX2CgoKEhISFhYWGhoaIiIiIiomJh4qKioqLi4uMjIyNjY2PiZCQkJCUlJSXBASaERGanJycBAScnJytFRWuDg6urq6wFBS2wcG3t7e4FRW5t7q6Cwu6urq7Dg6+vr7CwsLDwMTEDg7FxcXHxsfIyMjJFxfKDw/MDg7MzMzPz8/P0NDQ0NDRDw/RFxfS09XX19faGBja2trbExPc3NzlGhrl5eXo6Ojs7u7u7u7vGxvwGhrw8PDyGhry8vLz8/P0Ghr3Gxv39/f4+Pj8/Pz8/v79/f3+////HBz/HR3/Hh7///9j6e8DAAAAPnRSTlMAAAIKDBIWGBshJTI0O0tQY2VocnN1fImVnZ6lqKmrrLCxs7u8vb3G0tbW1tra39/i4uXl7Ozv7+/v8fH6+jTKPt8AAAGeSURBVHgBYwACZiFlAxMdWT4Qm5ERImBoqgsUgAAeDfe8hsbaZEd5VpACkED6rK27Nk4IAAoAAbdZVldXd3dXV5OXOgtIAbfFlFMnT5w4eXJ3IVCAgVkzGywNJJo9JIAKmLWnnwJJA9XszZBgYBD0AEp1F2fWd3W3VtpwMTIKZgDlT8yZtPnUiYPrbLkYVEuBuj3t7OxyurpbPEUYGdWWnTp5MjeuwnfqqRMHCkQYjIoqK9Psqu2jHapqyiKlGRmN5y1f3h+7vn1G8Iq1i+qkGczsgMDewS7JDgSUGBnN/fyD3Np67BaG+IUGeisx6M0/fbrELjXK0e7QsfkukoyM+jtOn17ts2R2d8zR4zsmSjIoRJ8+fdoVqLn59LYFdgKMjApzgQKTw+KjN50+vDNPgIHf7jQQLO0EEqvyzdgYGfkTQAJ7tgCJfSst2RiYVJxPQ8E0O2FgODCp9MEEticKA0OSQ9NhP5jbYCcFDmoOrY4jYIENSVLguGCXs3NKKY2wsxIDRxZIILx38ZqZ5dZAAQjgFVdUlhHlhMQmmgAAN4GpuWb98MUAAAAASUVORK5CYII=);
-	}
-	.pogoGym span {
-		background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAAC7lBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEAAAAAAAAAAAAAAAAAAAABAQEAAAABAQEBAQEAAAAAAAAAAAAAAAAAAAADAwMAAAAAAAABAQIAAAAAAAAAAAAAAAAAAAACAgIAAAAAAAABAAAAAAAAAAAAAAAAAAACAgIAAAAHBwcAAAACAgIAAAAbBgYBAQEBAQEZBgcAAAAAAAAAAAABAQEXFxcCAgICAgIHBAUBAQEGBgdyFRcRERFsFRYCAgIDAwMFBQUODg4EBAQFBQUREREFBQUGBgYTExMRCQoEBAQGBAVcIiYaGhoaGhsFBQUUFBRaJSgGBgYdFBgDAwMEBAQNDQ0ODg4fHyAjIyNYWFheLTEHBgcHBwgJCQkLCwsNDQ0PDw8RERESEhIUFBQVFRYWFhYXFxcYGBgZGRkZGRoaGhocHBwdHR0eHh4eHx8fHx8iIiIlJSUmJiYnJycpKSkqKiotLS0uLi4uLi8wMDAyMjIzMzM0NDQ2NjY4ODg6Ojo7Ozs7Oz09PT4+Pj4/Pz9DKS9DQ0NJSUpLS0xMTE1NTU1PT09QUFBRUVFSUlNXV1dZWVlbW1tcXFxeXl5eXl9jY2NkZGRmZmZoaGlsbG1wcHBycnJ1dXV7e3t/f3+AgYGBgYGFhYWIh4mPj4+THyGTk5SVlZWYmJqbm5ygoKCnp6irq6uvr6+wr7KwsLGxsbO1tbW3tri4t7m5ubu9HyDGxcjGxsfJJyjOzs7PHR7QIyTQ0NDR0dHSICHS0tLU1NTY2NjZ2dndIiPd3d3e3t7fIyTi4uLj4+PnICHn5+jq6urs6+zs7Ozu7u7w8PDw8PHx8fHx8fLy8fLy8vLzHR329vb29vf39/j4+Pj5+fn6Hh76Hx/7+/v7+/z8Hx/8/Pz8/P39Hh79/f3///+f+BszAAAAcXRSTlMAAAECAwQFBwoPFhskJSYqKy4yMzU4OTw/Q0hRW1xjZGVmb294e3+Fi4+QkZibnaWmqq+2t7m+x8nKzM3Oz9HR19fd3d/h4eLk5ebm5+rq7O7v8PDy8vP09fX19/f3+Pn5+fr6/Pz8/f3+/v7+/v7+/k5HHiYAAAGUSURBVHgBY2BkFHMMizAVYmRk5NLSVAJSUg5uwYHOlmIMjFzq+soMbHrZ3WsWNyfJ8Gh7pOTxMjJKW6fd/v79S6IFn4FXciUvg3HNoqXNk5Y3ZcXXLSrVBRooW3Dvw/lTr75nZM7Yvd6dgcF37YqGxTOrayZsubkgkpOBkd3v7MddLX2zL7cef3srSoWBIWh1z6yL2zo2XH9wpRLIZeSKu3Bj4uGj03tOv/+60IaBgSG0cWrnypldO5+8nubPDLSBI6GwpGje5KoDn3/uCxAEKvBctH9Oe+/GOy83lykyABUw+aw7sbV/yt4XPx83aTEAgXzxwSeX7t78ca3DDiTPyKBQsePd/YfPP71f5crGAAJGOduP3X3/aHW6AEQBg1ru3DM/fn47kioHFACpMHSy3/PsULc5SB6sQtI2Ov/pm2UeDEAREGLRsPK+uilaAqoApEku/NzJWHGQAASLurd1m4CYcBUuS+abQW0E8xXLQ4RBTLgS1foYfpgCEClSqwFiIYBIqzZEACrMrceKqoBbhxmqAAABho1+nW2udAAAAABJRU5ErkJggg==);
-	}
-
-	.PogoButtons {
-		color: #fff;
-		padding: 3px;
-	}
-
-	.PogoButtons span {
-		float: none;
-	}
-
-	.notPogo span {
-		color: #FFF;
-		background: #000;
-		border-radius: 50%;
-		font-size: 10px;
-		letter-spacing: -0.15em;
-		display: inline-block;
-		padding: 2px;
-		opacity: 0.6;
-		margin: 3px 1px 0 2px;
-		height: 15px;
-		width: 16px;
-		box-sizing: border-box;
-		line-height: 1;
-	}
-
-	.notPogo span:after {
-		display: inline-block;
-		content: "N/A";
-		position: absolute;
-	}
-
-	.notPogo:focus span, .notPogo.favorite span {
-		opacity: 1;
-	}
-
-	.pogo-text {
-		text-align: center;
-		font-weight: bold;
-		border: none !important;
-		background: none !important;
-		font-size: 130%;
-		color: #000;
-		text-shadow: 1px 1px #FFF, 2px 2px 6px #fff, -1px -1px #fff, -2px -2px 6px #fff;
-	}
-
-	@media (min-width: 1000px) {
-		.pogo-text {
-			font-size: 1.2vw;
+		#sidebar #portaldetails h3.title{
+			width:auto;
 		}
-	}
-
-	@media (min-width: 3000px) {
-		.pogo-text {
-			margin-left: -0.5vw !important;
-			margin-top: -0.7vw !important;
+		.pogoStop span,
+		.pogoGym span {
+			display:inline-block;
+			float:left;
+			margin:3px 1px 0 4px;
+			width:16px;
+			height:15px;
+			overflow:hidden;
+			background-repeat:no-repeat;
 		}
-	}
+		.pogoStop span, .pogoStop.favorite:focus span,
+		.pogoGym span, .pogoGym.favorite:focus span {
+			background-position:left top;
+		}
+		.pogoStop:focus span, .pogoStop.favorite span,
+		.pogoGym:focus span, .pogoGym.favorite span {
+			background-position:right top;
+		}
 
-	#PogoGymInfo {
-		color: #fff;
-		display: none;
-		padding: 3px;
-	}
+		/**********************************************
+			DIALOG BOX
+		**********************************************/
 
-	.isGym #PogoGymInfo {
-		display: block;
-	}
+		/*---- Options panel -----*/
+		#pogoSetbox a{
+			display:block;
+			color:#ffce00;
+			border:1px solid #ffce00;
+			padding:3px 0;
+			margin:10px auto;
+			width:80%;
+			text-align:center;
+			background:rgba(8,48,78,.9);
+		}
+		#pogoSetbox a.disabled,
+		#pogoSetbox a.disabled:hover{
+			color:#666;
+			border-color:#666;
+			text-decoration:none;
+		}
 
-	.thisIsPogo .layer_off_warning,
-	.thisIsPogo .mods,
-	.thisIsPogo #randdetails,
-	.thisIsPogo #resodetails,
-	.thisIsPogo #level {
-		display: none;
-	}
+		#pogoSetbox{
+			text-align:center;
+		}
+		.pogoStop span {
+			background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAACZFBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAQECAAAAAAAGAQEAAAAPDw8AAAAMAgIAAAALAQEBAQETAwMAAAAGBQUMAgISEhIAAAAWFhYBAQEWAwMAAAACAgIDAwMFBQUGBgYJCQkPDw8REREVGBgWFhYXFxchISEiIiIkICAoKCgpICAtLCwtLi4uBQUuKysuLy8vEBAvMjEyMDAzMzM0NDQ4ODg5OTk6Ojo+Pj5AQUFBS0tCSEhDQ0NISEhJSUlMTExSUlJUVFRWVlZXV1dYCwtZCwtaWlpcXFxeXl5gYGBhBgZiYmJjY2NlDAxmDAxnZ2doaGhra2tsbGxtbW1wcHBwfHtxcXFycnJ0dHR1dXV2dnZ4CQl5eXl9fX2CgoKEhISFhYWGhoaIiIiIiomJh4qKioqLi4uMjIyNjY2PiZCQkJCUlJSXBASaERGanJycBAScnJytFRWuDg6urq6wFBS2wcG3t7e4FRW5t7q6Cwu6urq7Dg6+vr7CwsLDwMTEDg7FxcXHxsfIyMjJFxfKDw/MDg7MzMzPz8/P0NDQ0NDRDw/RFxfS09XX19faGBja2trbExPc3NzlGhrl5eXo6Ojs7u7u7u7vGxvwGhrw8PDyGhry8vLz8/P0Ghr3Gxv39/f4+Pj8/Pz8/v79/f3+////HBz/HR3/Hh7///9j6e8DAAAAPnRSTlMAAAIKDBIWGBshJTI0O0tQY2VocnN1fImVnZ6lqKmrrLCxs7u8vb3G0tbW1tra39/i4uXl7Ozv7+/v8fH6+jTKPt8AAAGeSURBVHgBYwACZiFlAxMdWT4Qm5ERImBoqgsUgAAeDfe8hsbaZEd5VpACkED6rK27Nk4IAAoAAbdZVldXd3dXV5OXOgtIAbfFlFMnT5w4eXJ3IVCAgVkzGywNJJo9JIAKmLWnnwJJA9XszZBgYBD0AEp1F2fWd3W3VtpwMTIKZgDlT8yZtPnUiYPrbLkYVEuBuj3t7OxyurpbPEUYGdWWnTp5MjeuwnfqqRMHCkQYjIoqK9Psqu2jHapqyiKlGRmN5y1f3h+7vn1G8Iq1i+qkGczsgMDewS7JDgSUGBnN/fyD3Np67BaG+IUGeisx6M0/fbrELjXK0e7QsfkukoyM+jtOn17ts2R2d8zR4zsmSjIoRJ8+fdoVqLn59LYFdgKMjApzgQKTw+KjN50+vDNPgIHf7jQQLO0EEqvyzdgYGfkTQAJ7tgCJfSst2RiYVJxPQ8E0O2FgODCp9MEEticKA0OSQ9NhP5jbYCcFDmoOrY4jYIENSVLguGCXs3NKKY2wsxIDRxZIILx38ZqZ5dZAAQjgFVdUlhHlhMQmmgAAN4GpuWb98MUAAAAASUVORK5CYII=);
+		}
+		.pogoGym span {
+			background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAAC7lBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEAAAAAAAAAAAAAAAAAAAABAQEAAAABAQEBAQEAAAAAAAAAAAAAAAAAAAADAwMAAAAAAAABAQIAAAAAAAAAAAAAAAAAAAACAgIAAAAAAAABAAAAAAAAAAAAAAAAAAACAgIAAAAHBwcAAAACAgIAAAAbBgYBAQEBAQEZBgcAAAAAAAAAAAABAQEXFxcCAgICAgIHBAUBAQEGBgdyFRcRERFsFRYCAgIDAwMFBQUODg4EBAQFBQUREREFBQUGBgYTExMRCQoEBAQGBAVcIiYaGhoaGhsFBQUUFBRaJSgGBgYdFBgDAwMEBAQNDQ0ODg4fHyAjIyNYWFheLTEHBgcHBwgJCQkLCwsNDQ0PDw8RERESEhIUFBQVFRYWFhYXFxcYGBgZGRkZGRoaGhocHBwdHR0eHh4eHx8fHx8iIiIlJSUmJiYnJycpKSkqKiotLS0uLi4uLi8wMDAyMjIzMzM0NDQ2NjY4ODg6Ojo7Ozs7Oz09PT4+Pj4/Pz9DKS9DQ0NJSUpLS0xMTE1NTU1PT09QUFBRUVFSUlNXV1dZWVlbW1tcXFxeXl5eXl9jY2NkZGRmZmZoaGlsbG1wcHBycnJ1dXV7e3t/f3+AgYGBgYGFhYWIh4mPj4+THyGTk5SVlZWYmJqbm5ygoKCnp6irq6uvr6+wr7KwsLGxsbO1tbW3tri4t7m5ubu9HyDGxcjGxsfJJyjOzs7PHR7QIyTQ0NDR0dHSICHS0tLU1NTY2NjZ2dndIiPd3d3e3t7fIyTi4uLj4+PnICHn5+jq6urs6+zs7Ozu7u7w8PDw8PHx8fHx8fLy8fLy8vLzHR329vb29vf39/j4+Pj5+fn6Hh76Hx/7+/v7+/z8Hx/8/Pz8/P39Hh79/f3///+f+BszAAAAcXRSTlMAAAECAwQFBwoPFhskJSYqKy4yMzU4OTw/Q0hRW1xjZGVmb294e3+Fi4+QkZibnaWmqq+2t7m+x8nKzM3Oz9HR19fd3d/h4eLk5ebm5+rq7O7v8PDy8vP09fX19/f3+Pn5+fr6/Pz8/f3+/v7+/v7+/k5HHiYAAAGUSURBVHgBY2BkFHMMizAVYmRk5NLSVAJSUg5uwYHOlmIMjFzq+soMbHrZ3WsWNyfJ8Gh7pOTxMjJKW6fd/v79S6IFn4FXciUvg3HNoqXNk5Y3ZcXXLSrVBRooW3Dvw/lTr75nZM7Yvd6dgcF37YqGxTOrayZsubkgkpOBkd3v7MddLX2zL7cef3srSoWBIWh1z6yL2zo2XH9wpRLIZeSKu3Bj4uGj03tOv/+60IaBgSG0cWrnypldO5+8nubPDLSBI6GwpGje5KoDn3/uCxAEKvBctH9Oe+/GOy83lykyABUw+aw7sbV/yt4XPx83aTEAgXzxwSeX7t78ca3DDiTPyKBQsePd/YfPP71f5crGAAJGOduP3X3/aHW6AEQBg1ru3DM/fn47kioHFACpMHSy3/PsULc5SB6sQtI2Ov/pm2UeDEAREGLRsPK+uilaAqoApEku/NzJWHGQAASLurd1m4CYcBUuS+abQW0E8xXLQ4RBTLgS1foYfpgCEClSqwFiIYBIqzZEACrMrceKqoBbhxmqAAABho1+nW2udAAAAABJRU5ErkJggg==);
+		}
 
-	.thisIsPogo #playerstat,
-	.thisIsPogo #gamestat,
-	.thisIsPogo #redeem,
-	.thisIsPogo #chat,
-	.thisIsPogo #artifactLink,
-	.thisIsPogo #scoresLink,
-	.thisIsPogo #chatinput,
-	.thisIsPogo #chatcontrols {
-		display: none;
-	}
+		.PogoButtons {
+			color: #fff;
+			padding: 3px;
+		}
 
-	.thisIsPogo #mobileinfo .portallevel,
-	.thisIsPogo #mobileinfo .resonator {
-		display: none;
-	}
+		.PogoButtons span {
+			float: none;
+		}
 
-	.thisIsPogo #portal_highlight_select {
-		display: none;
-	}
+		.notPogo span {
+			color: #FFF;
+			background: #000;
+			border-radius: 50%;
+			font-size: 10px;
+			letter-spacing: -0.15em;
+			display: inline-block;
+			padding: 2px;
+			opacity: 0.6;
+			margin: 3px 1px 0 2px;
+			height: 15px;
+			width: 16px;
+			box-sizing: border-box;
+			line-height: 1;
+		}
 
-	.thisIsPogo #sidebar #portaldetails h3.title {
-		color: #fff;
-	}
+		.notPogo span:after {
+			display: inline-block;
+			content: "N/A";
+			position: absolute;
+		}
 
-	.gym-main-outline {
-		fill: #FFF;
-		stroke: #000;
-		stroke-width: 5;
-	}
+		.notPogo:focus span, .notPogo.favorite span {
+			opacity: 1;
+		}
 
-	.gym-inner path {
-		fill: #fff;
-		stroke: #000;
-		stroke-width: 2;
-	}
+		.pogo-text {
+			text-align: center;
+			font-weight: bold;
+			border: none !important;
+			background: none !important;
+			font-size: 130%;
+			color: #000;
+			text-shadow: 1px 1px #FFF, 2px 2px 6px #fff, -1px -1px #fff, -2px -2px 6px #fff;
+		}
 
-	.GoldMedal .gym-main-outline,
-	.GoldMedal .ball-outline-center {
-		fill: #FEED55;
-	}
-	.SilverMedal .gym-main-outline,
-	.SilverMedal .ball-outline-center {
-		fill: #CEDFE6;
-	}
-	.BronzeMedal .gym-main-outline,
-	.BronzeMedal .ball-outline-center {
-		fill: #F0B688;
-	}
+		@media (min-width: 1000px) {
+			.pogo-text {
+				font-size: 1.2vw;
+			}
+		}
 
-	.GoldMedal .gym-inner path {
-		stroke: #EDC13C;
-		stroke-width: 20;
-	}
-	.SilverMedal .gym-inner path {
-		stroke: #A4C1C7;
-		stroke-width: 20;
-	}
-	.BronzeMedal .gym-inner path {
-		stroke: #DD9D71;
-		stroke-width: 10;
-	}
+		@media (min-width: 3000px) {
+			.pogo-text {
+				margin-left: -0.5vw !important;
+				margin-top: -0.7vw !important;
+			}
+		}
 
-	.gym-inner .ball-outline-top {
-		fill: #f71208;
-	}
+		#PogoGymInfo {
+			color: #fff;
+			display: none;
+			padding: 3px;
+		}
 
-	.exGym {
-		position: relative;
-	}
+		.isGym #PogoGymInfo {
+			display: block;
+		}
 
-	.exGym:after {
-		content: "EX";
-		font-weight: bold;
-		text-shadow: 1px 1px 3px #BED1D5, -1px -1px 3px #BED1D5;
-		color: #09131D;
-		font-size: 130%;
-		position: absolute;
-		top: 0;
-		right: 0;
-	}
+		.thisIsPogo .layer_off_warning,
+		.thisIsPogo .mods,
+		.thisIsPogo #randdetails,
+		.thisIsPogo #resodetails,
+		.thisIsPogo #level {
+			display: none;
+		}
 
-	.pokestop {
-		opacity: 0.75;
-	}
+		.thisIsPogo #playerstat,
+		.thisIsPogo #gamestat,
+		.thisIsPogo #redeem,
+		.thisIsPogo #chat,
+		.thisIsPogo #artifactLink,
+		.thisIsPogo #scoresLink,
+		.thisIsPogo #chatinput,
+		.thisIsPogo #chatcontrols {
+			display: none;
+		}
 
-	.pokestop path,
-	.pokestop ellipse {
-		fill: #2370DA;
-	}
+		.thisIsPogo #mobileinfo .portallevel,
+		.thisIsPogo #mobileinfo .resonator {
+			display: none;
+		}
 
-	path.pokestop-circle {
-		fill: #23FEF8;
-		stroke-width: 30px;
-		stroke: #2370DA;
-	}
+		.thisIsPogo #portal_highlight_select {
+			display: none;
+		}
 
-	.missingPhoto path.pokestop-circle {
-		stroke-width: 20px;
-		fill: white;
-		opacity: 0.5;
-	}
+		.thisIsPogo #sidebar #portaldetails h3.title {
+			color: #fff;
+		}
 
-	.smallpokestops .pokestop {
-		opacity: 0.85;
-		pointer-events: none;
-	}
+		.gym-main-outline {
+			fill: #FFF;
+			stroke: #000;
+			stroke-width: 5;
+		}
 
-	.smallpokestops path.pokestop-pole,
-	.smallpokestops ellipse.pokestop-base {
-		display: none;
-	}
+		.gym-inner path {
+			fill: #fff;
+			stroke: #000;
+			stroke-width: 2;
+		}
 
-	.smallpokestops .pokestop svg {
-		transform: translateY(20px) scale(0.8);
-	}
+		.GoldMedal .gym-main-outline,
+		.GoldMedal .ball-outline-center {
+			fill: #FEED55;
+		}
+		.SilverMedal .gym-main-outline,
+		.SilverMedal .ball-outline-center {
+			fill: #CEDFE6;
+		}
+		.BronzeMedal .gym-main-outline,
+		.BronzeMedal .ball-outline-center {
+			fill: #F0B688;
+		}
 
-	.PogoClassification div {
-		display: grid;
-		grid-template-columns: 200px 60px 60px 60px;
-		text-align: center;
-		align-items: center;
-		height: 140px;
-		overflow: hidden;
-		margin-bottom: 10px;
-	}
+		.GoldMedal .gym-inner path {
+			stroke: #EDC13C;
+			stroke-width: 20;
+		}
+		.SilverMedal .gym-inner path {
+			stroke: #A4C1C7;
+			stroke-width: 20;
+		}
+		.BronzeMedal .gym-inner path {
+			stroke: #DD9D71;
+			stroke-width: 10;
+		}
 
-	.PogoClassification div:nth-child(odd) {
-		background: rgba(7, 42, 69, 0.9);
-	}
+		.gym-inner .ball-outline-top {
+			fill: #f71208;
+		}
 
-	.PogoClassification img {
-		max-width: 200px;
-		max-height: 140px;
-		display: block;
-		margin: 0 auto;
-	}
+		.exGym {
+			position: relative;
+		}
 
-	#dialog-missingPortals .PogoClassification div {
-		height: 50px;
-	}
+		.exGym:after {
+			content: "EX";
+			font-weight: bold;
+			text-shadow: 1px 1px 3px #BED1D5, -1px -1px 3px #BED1D5;
+			color: #09131D;
+			font-size: 130%;
+			position: absolute;
+			top: 0;
+			right: 0;
+		}
 
-	img.photo,
-	.ingressLocation,
-	.pogoLocation {
-		cursor: zoom-in;
-	}
+		.pokestop {
+			opacity: 0.75;
+		}
 
-	.PoGo-PortalAnimation {
-		width: 30px;
-		height: 30px;
-		background-color: rgba(255, 255, 255, 0.5);
-		border-radius: 50%;
-		box-shadow: 0px 0px 4px white;
-		animation-duration: 1s;
-		animation-name: shrink;
-	}
+		.pokestop path,
+		.pokestop ellipse {
+			fill: #2370DA;
+		}
 
-	@keyframes shrink {
-		from {
+		path.pokestop-circle {
+			fill: #23FEF8;
+			stroke-width: 30px;
+			stroke: #2370DA;
+		}
+
+		.missingPhoto path.pokestop-circle {
+			stroke-width: 20px;
+			fill: white;
+			opacity: 0.5;
+		}
+
+		.smallpokestops .pokestop {
+			opacity: 0.85;
+			pointer-events: none;
+		}
+
+		.smallpokestops path.pokestop-pole,
+		.smallpokestops ellipse.pokestop-base {
+			display: none;
+		}
+
+		.smallpokestops .pokestop svg {
+			transform: translateY(20px) scale(0.8);
+		}
+
+		.PogoClassification div {
+			display: grid;
+			grid-template-columns: 200px 60px 60px 60px;
+			text-align: center;
+			align-items: center;
+			height: 140px;
+			overflow: hidden;
+			margin-bottom: 10px;
+		}
+
+		.PogoClassification div:nth-child(odd) {
+			background: rgba(7, 42, 69, 0.9);
+		}
+
+		.PogoClassification img {
+			max-width: 200px;
+			max-height: 140px;
+			display: block;
+			margin: 0 auto;
+		}
+
+		#dialog-missingPortals .PogoClassification div {
+			height: 50px;
+		}
+
+		img.photo,
+		.ingressLocation,
+		.pogoLocation {
+			cursor: zoom-in;
+		}
+
+		.PoGo-PortalAnimation {
 			width: 30px;
 			height: 30px;
-			top: 0px;
-			left: 0px;
+			background-color: rgba(255, 255, 255, 0.5);
+			border-radius: 50%;
+			box-shadow: 0px 0px 4px white;
+			animation-duration: 1s;
+			animation-name: shrink;
 		}
 
-		to {
-			width: 10px;
-			height: 10px;
-			top: 10px;
-			left: 10px;
-		}
-	}
+		@keyframes shrink {
+			from {
+				width: 30px;
+				height: 30px;
+				top: 0px;
+				left: 0px;
+			}
 
-	.PoGo-PortalAnimationHover {
-		background-color: rgb(255, 102, 0, 0.8);
-		border-radius: 50%;
-		animation-duration: 1s;
-		animation-name: shrinkHover;
-		animation-iteration-count: infinite;
-	}
-
-	@keyframes shrinkHover {
-		from {
-			width: 40px;
-			height: 40px;
-			top: 0px;
-			left: 0px;
+			to {
+				width: 10px;
+				height: 10px;
+				top: 10px;
+				left: 10px;
+			}
 		}
 
-		to {
-			width: 20px;
-			height: 20px;
-			top: 10px;
-			left: 10px;
+		.PoGo-PortalAnimationHover {
+			background-color: rgb(255, 102, 0, 0.8);
+			border-radius: 50%;
+			animation-duration: 1s;
+			animation-name: shrinkHover;
+			animation-iteration-count: infinite;
 		}
-	}
 
-	#sidebarPogo {
-		color: #eee;
-		padding: 2px 5px;
-	}
+		@keyframes shrinkHover {
+			from {
+				width: 40px;
+				height: 40px;
+				top: 0px;
+				left: 0px;
+			}
 
-	#sidebarPogo span {
-		margin-right: 5px;
-	}
+			to {
+				width: 20px;
+				height: 20px;
+				top: 10px;
+				left: 10px;
+			}
+		}
 
-	.refreshingData,
-	.refreshingPortalCount {
-		opacity: 0.5;
-		pointer-events: none;
-	}
+		#sidebarPogo {
+			color: #eee;
+			padding: 2px 5px;
+		}
 
-	#sidebarPogo.mobile {
-		width: 100%;
-		background: rebeccapurple;
-		display: flex;
-	}
+		#sidebarPogo span {
+			margin-right: 5px;
+		}
 
-	#sidebarPogo.mobile > div {
-		margin-right: 1em;
-	}
+		.refreshingData,
+		.refreshingPortalCount {
+			opacity: 0.5;
+			pointer-events: none;
+		}
 
-	.pogo-colors input[type=color] {
-		border: 0;
-		padding: 0;
-	}
+		#sidebarPogo.mobile {
+			width: 100%;
+			background: rebeccapurple;
+			display: flex;
+		}
 
-	.PogoListing .header {
-		align-items: center;
-		display: grid;
-		grid-column-gap: 5px;
-		grid-template-columns: 1fr 40px 40px 40px;
-		text-align: center;
-	}
+		#sidebarPogo.mobile > div {
+			margin-right: 1em;
+		}
 
-	.PogoListing .header > span + span {
-		font-size: 90%;
-		font-weight: normal;
-	}
+		.pogo-colors input[type=color] {
+			border: 0;
+			padding: 0;
+		}
 
-	.PogoListing .PortalSummary {
-		align-items: center;
-		display: grid;
-		grid-column-gap: 5px;
-		grid-template-columns: 100px 1fr 40px 40px 40px;
-		height: 70px;
-		margin-bottom: 10px;
-		overflow: hidden;
-		text-align: center;
-	}
+		.PogoListing .header {
+			align-items: center;
+			display: grid;
+			grid-column-gap: 5px;
+			grid-template-columns: 1fr 40px 40px 40px;
+			text-align: center;
+		}
 
-	.PogoListing div div:nth-child(odd) {
-		background: rgba(7, 42, 69, 0.9);
-	}
+		.PogoListing .header > span + span {
+			font-size: 90%;
+			font-weight: normal;
+		}
 
-	.PogoListing img {
-		max-width: 100px;
-		max-height: 70px;
-		display: block;
-		margin: 0 auto;
-	}
+		.PogoListing .PortalSummary {
+			align-items: center;
+			display: grid;
+			grid-column-gap: 5px;
+			grid-template-columns: 100px 1fr 40px 40px 40px;
+			height: 70px;
+			margin-bottom: 10px;
+			overflow: hidden;
+			text-align: center;
+		}
 
-	.Pogo_Photos,
-	.Pogo_Votes {
-		width: 100%;
-		text-align: right;
-	}
+		.PogoListing div div:nth-child(odd) {
+			background: rgba(7, 42, 69, 0.9);
+		}
 
-	`).appendTo('head');
+		.PogoListing img {
+			max-width: 100px;
+			max-height: 70px;
+			display: block;
+			margin: 0 auto;
+		}
+
+		.Pogo_Photos,
+		.Pogo_Votes {
+			width: 100%;
+			text-align: right;
+		}
+
+		`).appendTo('head');
 		};
 
 		// A portal has been received.
