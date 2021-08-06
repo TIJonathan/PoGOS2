@@ -1426,13 +1426,10 @@
 			// corner points
 			const corners = cell.getCornerLatLngs();
 
-			//https://github.com/henrythasler/Leaflet.Geodesic
-
 			// the level 6 cells have noticible errors with non-geodesic lines - and the larger level 4 cells are worse
 			// NOTE: we only draw two of the edges. as we draw all cells on screen, the other two edges will either be drawn
 			// from the other cell, or be off screen so we don't care
-			//const region = L.polyline([corners[0], corners[1], corners[2], corners[3], corners[0]], {fill: false, color: color, opacity: opacity, weight: weight, clickable: false, interactive: false});
-			const region = new L.Geodesic([corners[0], corners[1], corners[2], corners[3], corners[0]], {fill: false, color: color, opacity: opacity, weight: weight, clickable: false, interactive: false});
+			const region = L.polyline([corners[0], corners[1], corners[2], corners[3], corners[0]], {fill: false, color: color, opacity: opacity, weight: weight, clickable: false, interactive: false});
 
 			return region;
 		}
@@ -2127,405 +2124,405 @@
 
 		thisPlugin.setupCSS = function () {
 			$('<style>').prop('type', 'text/css').html(`
-		#sidebar #portaldetails h3.title{
-			width:auto;
-		}
-		.pogoStop span,
-		.pogoGym span {
-			display:inline-block;
-			float:left;
-			margin:3px 1px 0 4px;
-			width:16px;
-			height:15px;
-			overflow:hidden;
-			background-repeat:no-repeat;
-		}
-		.pogoStop span, .pogoStop.favorite:focus span,
-		.pogoGym span, .pogoGym.favorite:focus span {
-			background-position:left top;
-		}
-		.pogoStop:focus span, .pogoStop.favorite span,
-		.pogoGym:focus span, .pogoGym.favorite span {
-			background-position:right top;
-		}
+	#sidebar #portaldetails h3.title{
+		width:auto;
+	}
+	.pogoStop span,
+	.pogoGym span {
+		display:inline-block;
+		float:left;
+		margin:3px 1px 0 4px;
+		width:16px;
+		height:15px;
+		overflow:hidden;
+		background-repeat:no-repeat;
+	}
+	.pogoStop span, .pogoStop.favorite:focus span,
+	.pogoGym span, .pogoGym.favorite:focus span {
+		background-position:left top;
+	}
+	.pogoStop:focus span, .pogoStop.favorite span,
+	.pogoGym:focus span, .pogoGym.favorite span {
+		background-position:right top;
+	}
 
-		/**********************************************
-			DIALOG BOX
-		**********************************************/
+	/**********************************************
+		DIALOG BOX
+	**********************************************/
 
-		/*---- Options panel -----*/
-		#pogoSetbox a{
-			display:block;
-			color:#ffce00;
-			border:1px solid #ffce00;
-			padding:3px 0;
-			margin:10px auto;
-			width:80%;
-			text-align:center;
-			background:rgba(8,48,78,.9);
-		}
-		#pogoSetbox a.disabled,
-		#pogoSetbox a.disabled:hover{
-			color:#666;
-			border-color:#666;
-			text-decoration:none;
-		}
+	/*---- Options panel -----*/
+	#pogoSetbox a{
+		display:block;
+		color:#ffce00;
+		border:1px solid #ffce00;
+		padding:3px 0;
+		margin:10px auto;
+		width:80%;
+		text-align:center;
+		background:rgba(8,48,78,.9);
+	}
+	#pogoSetbox a.disabled,
+	#pogoSetbox a.disabled:hover{
+		color:#666;
+		border-color:#666;
+		text-decoration:none;
+	}
 
-		#pogoSetbox{
-			text-align:center;
-		}
-		.pogoStop span {
-			background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAACZFBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAQECAAAAAAAGAQEAAAAPDw8AAAAMAgIAAAALAQEBAQETAwMAAAAGBQUMAgISEhIAAAAWFhYBAQEWAwMAAAACAgIDAwMFBQUGBgYJCQkPDw8REREVGBgWFhYXFxchISEiIiIkICAoKCgpICAtLCwtLi4uBQUuKysuLy8vEBAvMjEyMDAzMzM0NDQ4ODg5OTk6Ojo+Pj5AQUFBS0tCSEhDQ0NISEhJSUlMTExSUlJUVFRWVlZXV1dYCwtZCwtaWlpcXFxeXl5gYGBhBgZiYmJjY2NlDAxmDAxnZ2doaGhra2tsbGxtbW1wcHBwfHtxcXFycnJ0dHR1dXV2dnZ4CQl5eXl9fX2CgoKEhISFhYWGhoaIiIiIiomJh4qKioqLi4uMjIyNjY2PiZCQkJCUlJSXBASaERGanJycBAScnJytFRWuDg6urq6wFBS2wcG3t7e4FRW5t7q6Cwu6urq7Dg6+vr7CwsLDwMTEDg7FxcXHxsfIyMjJFxfKDw/MDg7MzMzPz8/P0NDQ0NDRDw/RFxfS09XX19faGBja2trbExPc3NzlGhrl5eXo6Ojs7u7u7u7vGxvwGhrw8PDyGhry8vLz8/P0Ghr3Gxv39/f4+Pj8/Pz8/v79/f3+////HBz/HR3/Hh7///9j6e8DAAAAPnRSTlMAAAIKDBIWGBshJTI0O0tQY2VocnN1fImVnZ6lqKmrrLCxs7u8vb3G0tbW1tra39/i4uXl7Ozv7+/v8fH6+jTKPt8AAAGeSURBVHgBYwACZiFlAxMdWT4Qm5ERImBoqgsUgAAeDfe8hsbaZEd5VpACkED6rK27Nk4IAAoAAbdZVldXd3dXV5OXOgtIAbfFlFMnT5w4eXJ3IVCAgVkzGywNJJo9JIAKmLWnnwJJA9XszZBgYBD0AEp1F2fWd3W3VtpwMTIKZgDlT8yZtPnUiYPrbLkYVEuBuj3t7OxyurpbPEUYGdWWnTp5MjeuwnfqqRMHCkQYjIoqK9Psqu2jHapqyiKlGRmN5y1f3h+7vn1G8Iq1i+qkGczsgMDewS7JDgSUGBnN/fyD3Np67BaG+IUGeisx6M0/fbrELjXK0e7QsfkukoyM+jtOn17ts2R2d8zR4zsmSjIoRJ8+fdoVqLn59LYFdgKMjApzgQKTw+KjN50+vDNPgIHf7jQQLO0EEqvyzdgYGfkTQAJ7tgCJfSst2RiYVJxPQ8E0O2FgODCp9MEEticKA0OSQ9NhP5jbYCcFDmoOrY4jYIENSVLguGCXs3NKKY2wsxIDRxZIILx38ZqZ5dZAAQjgFVdUlhHlhMQmmgAAN4GpuWb98MUAAAAASUVORK5CYII=);
-		}
-		.pogoGym span {
-			background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAAC7lBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEAAAAAAAAAAAAAAAAAAAABAQEAAAABAQEBAQEAAAAAAAAAAAAAAAAAAAADAwMAAAAAAAABAQIAAAAAAAAAAAAAAAAAAAACAgIAAAAAAAABAAAAAAAAAAAAAAAAAAACAgIAAAAHBwcAAAACAgIAAAAbBgYBAQEBAQEZBgcAAAAAAAAAAAABAQEXFxcCAgICAgIHBAUBAQEGBgdyFRcRERFsFRYCAgIDAwMFBQUODg4EBAQFBQUREREFBQUGBgYTExMRCQoEBAQGBAVcIiYaGhoaGhsFBQUUFBRaJSgGBgYdFBgDAwMEBAQNDQ0ODg4fHyAjIyNYWFheLTEHBgcHBwgJCQkLCwsNDQ0PDw8RERESEhIUFBQVFRYWFhYXFxcYGBgZGRkZGRoaGhocHBwdHR0eHh4eHx8fHx8iIiIlJSUmJiYnJycpKSkqKiotLS0uLi4uLi8wMDAyMjIzMzM0NDQ2NjY4ODg6Ojo7Ozs7Oz09PT4+Pj4/Pz9DKS9DQ0NJSUpLS0xMTE1NTU1PT09QUFBRUVFSUlNXV1dZWVlbW1tcXFxeXl5eXl9jY2NkZGRmZmZoaGlsbG1wcHBycnJ1dXV7e3t/f3+AgYGBgYGFhYWIh4mPj4+THyGTk5SVlZWYmJqbm5ygoKCnp6irq6uvr6+wr7KwsLGxsbO1tbW3tri4t7m5ubu9HyDGxcjGxsfJJyjOzs7PHR7QIyTQ0NDR0dHSICHS0tLU1NTY2NjZ2dndIiPd3d3e3t7fIyTi4uLj4+PnICHn5+jq6urs6+zs7Ozu7u7w8PDw8PHx8fHx8fLy8fLy8vLzHR329vb29vf39/j4+Pj5+fn6Hh76Hx/7+/v7+/z8Hx/8/Pz8/P39Hh79/f3///+f+BszAAAAcXRSTlMAAAECAwQFBwoPFhskJSYqKy4yMzU4OTw/Q0hRW1xjZGVmb294e3+Fi4+QkZibnaWmqq+2t7m+x8nKzM3Oz9HR19fd3d/h4eLk5ebm5+rq7O7v8PDy8vP09fX19/f3+Pn5+fr6/Pz8/f3+/v7+/v7+/k5HHiYAAAGUSURBVHgBY2BkFHMMizAVYmRk5NLSVAJSUg5uwYHOlmIMjFzq+soMbHrZ3WsWNyfJ8Gh7pOTxMjJKW6fd/v79S6IFn4FXciUvg3HNoqXNk5Y3ZcXXLSrVBRooW3Dvw/lTr75nZM7Yvd6dgcF37YqGxTOrayZsubkgkpOBkd3v7MddLX2zL7cef3srSoWBIWh1z6yL2zo2XH9wpRLIZeSKu3Bj4uGj03tOv/+60IaBgSG0cWrnypldO5+8nubPDLSBI6GwpGje5KoDn3/uCxAEKvBctH9Oe+/GOy83lykyABUw+aw7sbV/yt4XPx83aTEAgXzxwSeX7t78ca3DDiTPyKBQsePd/YfPP71f5crGAAJGOduP3X3/aHW6AEQBg1ru3DM/fn47kioHFACpMHSy3/PsULc5SB6sQtI2Ov/pm2UeDEAREGLRsPK+uilaAqoApEku/NzJWHGQAASLurd1m4CYcBUuS+abQW0E8xXLQ4RBTLgS1foYfpgCEClSqwFiIYBIqzZEACrMrceKqoBbhxmqAAABho1+nW2udAAAAABJRU5ErkJggg==);
-		}
+	#pogoSetbox{
+		text-align:center;
+	}
+	.pogoStop span {
+		background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAACZFBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAABAQECAAAAAAAGAQEAAAAPDw8AAAAMAgIAAAALAQEBAQETAwMAAAAGBQUMAgISEhIAAAAWFhYBAQEWAwMAAAACAgIDAwMFBQUGBgYJCQkPDw8REREVGBgWFhYXFxchISEiIiIkICAoKCgpICAtLCwtLi4uBQUuKysuLy8vEBAvMjEyMDAzMzM0NDQ4ODg5OTk6Ojo+Pj5AQUFBS0tCSEhDQ0NISEhJSUlMTExSUlJUVFRWVlZXV1dYCwtZCwtaWlpcXFxeXl5gYGBhBgZiYmJjY2NlDAxmDAxnZ2doaGhra2tsbGxtbW1wcHBwfHtxcXFycnJ0dHR1dXV2dnZ4CQl5eXl9fX2CgoKEhISFhYWGhoaIiIiIiomJh4qKioqLi4uMjIyNjY2PiZCQkJCUlJSXBASaERGanJycBAScnJytFRWuDg6urq6wFBS2wcG3t7e4FRW5t7q6Cwu6urq7Dg6+vr7CwsLDwMTEDg7FxcXHxsfIyMjJFxfKDw/MDg7MzMzPz8/P0NDQ0NDRDw/RFxfS09XX19faGBja2trbExPc3NzlGhrl5eXo6Ojs7u7u7u7vGxvwGhrw8PDyGhry8vLz8/P0Ghr3Gxv39/f4+Pj8/Pz8/v79/f3+////HBz/HR3/Hh7///9j6e8DAAAAPnRSTlMAAAIKDBIWGBshJTI0O0tQY2VocnN1fImVnZ6lqKmrrLCxs7u8vb3G0tbW1tra39/i4uXl7Ozv7+/v8fH6+jTKPt8AAAGeSURBVHgBYwACZiFlAxMdWT4Qm5ERImBoqgsUgAAeDfe8hsbaZEd5VpACkED6rK27Nk4IAAoAAbdZVldXd3dXV5OXOgtIAbfFlFMnT5w4eXJ3IVCAgVkzGywNJJo9JIAKmLWnnwJJA9XszZBgYBD0AEp1F2fWd3W3VtpwMTIKZgDlT8yZtPnUiYPrbLkYVEuBuj3t7OxyurpbPEUYGdWWnTp5MjeuwnfqqRMHCkQYjIoqK9Psqu2jHapqyiKlGRmN5y1f3h+7vn1G8Iq1i+qkGczsgMDewS7JDgSUGBnN/fyD3Np67BaG+IUGeisx6M0/fbrELjXK0e7QsfkukoyM+jtOn17ts2R2d8zR4zsmSjIoRJ8+fdoVqLn59LYFdgKMjApzgQKTw+KjN50+vDNPgIHf7jQQLO0EEqvyzdgYGfkTQAJ7tgCJfSst2RiYVJxPQ8E0O2FgODCp9MEEticKA0OSQ9NhP5jbYCcFDmoOrY4jYIENSVLguGCXs3NKKY2wsxIDRxZIILx38ZqZ5dZAAQjgFVdUlhHlhMQmmgAAN4GpuWb98MUAAAAASUVORK5CYII=);
+	}
+	.pogoGym span {
+		background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAPCAMAAACyXj0lAAAC7lBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQEAAAAAAAAAAAAAAAAAAAABAQEAAAABAQEBAQEAAAAAAAAAAAAAAAAAAAADAwMAAAAAAAABAQIAAAAAAAAAAAAAAAAAAAACAgIAAAAAAAABAAAAAAAAAAAAAAAAAAACAgIAAAAHBwcAAAACAgIAAAAbBgYBAQEBAQEZBgcAAAAAAAAAAAABAQEXFxcCAgICAgIHBAUBAQEGBgdyFRcRERFsFRYCAgIDAwMFBQUODg4EBAQFBQUREREFBQUGBgYTExMRCQoEBAQGBAVcIiYaGhoaGhsFBQUUFBRaJSgGBgYdFBgDAwMEBAQNDQ0ODg4fHyAjIyNYWFheLTEHBgcHBwgJCQkLCwsNDQ0PDw8RERESEhIUFBQVFRYWFhYXFxcYGBgZGRkZGRoaGhocHBwdHR0eHh4eHx8fHx8iIiIlJSUmJiYnJycpKSkqKiotLS0uLi4uLi8wMDAyMjIzMzM0NDQ2NjY4ODg6Ojo7Ozs7Oz09PT4+Pj4/Pz9DKS9DQ0NJSUpLS0xMTE1NTU1PT09QUFBRUVFSUlNXV1dZWVlbW1tcXFxeXl5eXl9jY2NkZGRmZmZoaGlsbG1wcHBycnJ1dXV7e3t/f3+AgYGBgYGFhYWIh4mPj4+THyGTk5SVlZWYmJqbm5ygoKCnp6irq6uvr6+wr7KwsLGxsbO1tbW3tri4t7m5ubu9HyDGxcjGxsfJJyjOzs7PHR7QIyTQ0NDR0dHSICHS0tLU1NTY2NjZ2dndIiPd3d3e3t7fIyTi4uLj4+PnICHn5+jq6urs6+zs7Ozu7u7w8PDw8PHx8fHx8fLy8fLy8vLzHR329vb29vf39/j4+Pj5+fn6Hh76Hx/7+/v7+/z8Hx/8/Pz8/P39Hh79/f3///+f+BszAAAAcXRSTlMAAAECAwQFBwoPFhskJSYqKy4yMzU4OTw/Q0hRW1xjZGVmb294e3+Fi4+QkZibnaWmqq+2t7m+x8nKzM3Oz9HR19fd3d/h4eLk5ebm5+rq7O7v8PDy8vP09fX19/f3+Pn5+fr6/Pz8/f3+/v7+/v7+/k5HHiYAAAGUSURBVHgBY2BkFHMMizAVYmRk5NLSVAJSUg5uwYHOlmIMjFzq+soMbHrZ3WsWNyfJ8Gh7pOTxMjJKW6fd/v79S6IFn4FXciUvg3HNoqXNk5Y3ZcXXLSrVBRooW3Dvw/lTr75nZM7Yvd6dgcF37YqGxTOrayZsubkgkpOBkd3v7MddLX2zL7cef3srSoWBIWh1z6yL2zo2XH9wpRLIZeSKu3Bj4uGj03tOv/+60IaBgSG0cWrnypldO5+8nubPDLSBI6GwpGje5KoDn3/uCxAEKvBctH9Oe+/GOy83lykyABUw+aw7sbV/yt4XPx83aTEAgXzxwSeX7t78ca3DDiTPyKBQsePd/YfPP71f5crGAAJGOduP3X3/aHW6AEQBg1ru3DM/fn47kioHFACpMHSy3/PsULc5SB6sQtI2Ov/pm2UeDEAREGLRsPK+uilaAqoApEku/NzJWHGQAASLurd1m4CYcBUuS+abQW0E8xXLQ4RBTLgS1foYfpgCEClSqwFiIYBIqzZEACrMrceKqoBbhxmqAAABho1+nW2udAAAAABJRU5ErkJggg==);
+	}
 
-		.PogoButtons {
-			color: #fff;
-			padding: 3px;
-		}
+	.PogoButtons {
+		color: #fff;
+		padding: 3px;
+	}
 
-		.PogoButtons span {
-			float: none;
-		}
+	.PogoButtons span {
+		float: none;
+	}
 
-		.notPogo span {
-			color: #FFF;
-			background: #000;
-			border-radius: 50%;
-			font-size: 10px;
-			letter-spacing: -0.15em;
-			display: inline-block;
-			padding: 2px;
-			opacity: 0.6;
-			margin: 3px 1px 0 2px;
-			height: 15px;
-			width: 16px;
-			box-sizing: border-box;
-			line-height: 1;
-		}
+	.notPogo span {
+		color: #FFF;
+		background: #000;
+		border-radius: 50%;
+		font-size: 10px;
+		letter-spacing: -0.15em;
+		display: inline-block;
+		padding: 2px;
+		opacity: 0.6;
+		margin: 3px 1px 0 2px;
+		height: 15px;
+		width: 16px;
+		box-sizing: border-box;
+		line-height: 1;
+	}
 
-		.notPogo span:after {
-			display: inline-block;
-			content: "N/A";
-			position: absolute;
-		}
+	.notPogo span:after {
+		display: inline-block;
+		content: "N/A";
+		position: absolute;
+	}
 
-		.notPogo:focus span, .notPogo.favorite span {
-			opacity: 1;
-		}
+	.notPogo:focus span, .notPogo.favorite span {
+		opacity: 1;
+	}
 
+	.pogo-text {
+		text-align: center;
+		font-weight: bold;
+		border: none !important;
+		background: none !important;
+		font-size: 130%;
+		color: #000;
+		text-shadow: 1px 1px #FFF, 2px 2px 6px #fff, -1px -1px #fff, -2px -2px 6px #fff;
+	}
+
+	@media (min-width: 1000px) {
 		.pogo-text {
-			text-align: center;
-			font-weight: bold;
-			border: none !important;
-			background: none !important;
-			font-size: 130%;
-			color: #000;
-			text-shadow: 1px 1px #FFF, 2px 2px 6px #fff, -1px -1px #fff, -2px -2px 6px #fff;
+			font-size: 1.2vw;
 		}
+	}
 
-		@media (min-width: 1000px) {
-			.pogo-text {
-				font-size: 1.2vw;
-			}
+	@media (min-width: 3000px) {
+		.pogo-text {
+			margin-left: -0.5vw !important;
+			margin-top: -0.7vw !important;
 		}
+	}
 
-		@media (min-width: 3000px) {
-			.pogo-text {
-				margin-left: -0.5vw !important;
-				margin-top: -0.7vw !important;
-			}
-		}
+	#PogoGymInfo {
+		color: #fff;
+		display: none;
+		padding: 3px;
+	}
 
-		#PogoGymInfo {
-			color: #fff;
-			display: none;
-			padding: 3px;
-		}
+	.isGym #PogoGymInfo {
+		display: block;
+	}
 
-		.isGym #PogoGymInfo {
-			display: block;
-		}
+	.thisIsPogo .layer_off_warning,
+	.thisIsPogo .mods,
+	.thisIsPogo #randdetails,
+	.thisIsPogo #resodetails,
+	.thisIsPogo #level {
+		display: none;
+	}
 
-		.thisIsPogo .layer_off_warning,
-		.thisIsPogo .mods,
-		.thisIsPogo #randdetails,
-		.thisIsPogo #resodetails,
-		.thisIsPogo #level {
-			display: none;
-		}
+	.thisIsPogo #playerstat,
+	.thisIsPogo #gamestat,
+	.thisIsPogo #redeem,
+	.thisIsPogo #chat,
+	.thisIsPogo #artifactLink,
+	.thisIsPogo #scoresLink,
+	.thisIsPogo #chatinput,
+	.thisIsPogo #chatcontrols {
+		display: none;
+	}
 
-		.thisIsPogo #playerstat,
-		.thisIsPogo #gamestat,
-		.thisIsPogo #redeem,
-		.thisIsPogo #chat,
-		.thisIsPogo #artifactLink,
-		.thisIsPogo #scoresLink,
-		.thisIsPogo #chatinput,
-		.thisIsPogo #chatcontrols {
-			display: none;
-		}
+	.thisIsPogo #mobileinfo .portallevel,
+	.thisIsPogo #mobileinfo .resonator {
+		display: none;
+	}
 
-		.thisIsPogo #mobileinfo .portallevel,
-		.thisIsPogo #mobileinfo .resonator {
-			display: none;
-		}
+	.thisIsPogo #portal_highlight_select {
+		display: none;
+	}
 
-		.thisIsPogo #portal_highlight_select {
-			display: none;
-		}
+	.thisIsPogo #sidebar #portaldetails h3.title {
+		color: #fff;
+	}
 
-		.thisIsPogo #sidebar #portaldetails h3.title {
-			color: #fff;
-		}
+	.gym-main-outline {
+		fill: #FFF;
+		stroke: #000;
+		stroke-width: 5;
+	}
 
-		.gym-main-outline {
-			fill: #FFF;
-			stroke: #000;
-			stroke-width: 5;
-		}
+	.gym-inner path {
+		fill: #fff;
+		stroke: #000;
+		stroke-width: 2;
+	}
 
-		.gym-inner path {
-			fill: #fff;
-			stroke: #000;
-			stroke-width: 2;
-		}
+	.GoldMedal .gym-main-outline,
+	.GoldMedal .ball-outline-center {
+		fill: #FEED55;
+	}
+	.SilverMedal .gym-main-outline,
+	.SilverMedal .ball-outline-center {
+		fill: #CEDFE6;
+	}
+	.BronzeMedal .gym-main-outline,
+	.BronzeMedal .ball-outline-center {
+		fill: #F0B688;
+	}
 
-		.GoldMedal .gym-main-outline,
-		.GoldMedal .ball-outline-center {
-			fill: #FEED55;
-		}
-		.SilverMedal .gym-main-outline,
-		.SilverMedal .ball-outline-center {
-			fill: #CEDFE6;
-		}
-		.BronzeMedal .gym-main-outline,
-		.BronzeMedal .ball-outline-center {
-			fill: #F0B688;
-		}
+	.GoldMedal .gym-inner path {
+		stroke: #EDC13C;
+		stroke-width: 20;
+	}
+	.SilverMedal .gym-inner path {
+		stroke: #A4C1C7;
+		stroke-width: 20;
+	}
+	.BronzeMedal .gym-inner path {
+		stroke: #DD9D71;
+		stroke-width: 10;
+	}
 
-		.GoldMedal .gym-inner path {
-			stroke: #EDC13C;
-			stroke-width: 20;
-		}
-		.SilverMedal .gym-inner path {
-			stroke: #A4C1C7;
-			stroke-width: 20;
-		}
-		.BronzeMedal .gym-inner path {
-			stroke: #DD9D71;
-			stroke-width: 10;
-		}
+	.gym-inner .ball-outline-top {
+		fill: #f71208;
+	}
 
-		.gym-inner .ball-outline-top {
-			fill: #f71208;
-		}
+	.exGym {
+		position: relative;
+	}
 
-		.exGym {
-			position: relative;
-		}
+	.exGym:after {
+		content: "EX";
+		font-weight: bold;
+		text-shadow: 1px 1px 3px #BED1D5, -1px -1px 3px #BED1D5;
+		color: #09131D;
+		font-size: 130%;
+		position: absolute;
+		top: 0;
+		right: 0;
+	}
 
-		.exGym:after {
-			content: "EX";
-			font-weight: bold;
-			text-shadow: 1px 1px 3px #BED1D5, -1px -1px 3px #BED1D5;
-			color: #09131D;
-			font-size: 130%;
-			position: absolute;
-			top: 0;
-			right: 0;
-		}
+	.pokestop {
+		opacity: 0.75;
+	}
 
-		.pokestop {
-			opacity: 0.75;
-		}
+	.pokestop path,
+	.pokestop ellipse {
+		fill: #2370DA;
+	}
 
-		.pokestop path,
-		.pokestop ellipse {
-			fill: #2370DA;
-		}
+	path.pokestop-circle {
+		fill: #23FEF8;
+		stroke-width: 30px;
+		stroke: #2370DA;
+	}
 
-		path.pokestop-circle {
-			fill: #23FEF8;
-			stroke-width: 30px;
-			stroke: #2370DA;
-		}
+	.missingPhoto path.pokestop-circle {
+		stroke-width: 20px;
+		fill: white;
+		opacity: 0.5;
+	}
 
-		.missingPhoto path.pokestop-circle {
-			stroke-width: 20px;
-			fill: white;
-			opacity: 0.5;
-		}
+	.smallpokestops .pokestop {
+		opacity: 0.85;
+		pointer-events: none;
+	}
 
-		.smallpokestops .pokestop {
-			opacity: 0.85;
-			pointer-events: none;
-		}
+	.smallpokestops path.pokestop-pole,
+	.smallpokestops ellipse.pokestop-base {
+		display: none;
+	}
 
-		.smallpokestops path.pokestop-pole,
-		.smallpokestops ellipse.pokestop-base {
-			display: none;
-		}
+	.smallpokestops .pokestop svg {
+		transform: translateY(20px) scale(0.8);
+	}
 
-		.smallpokestops .pokestop svg {
-			transform: translateY(20px) scale(0.8);
-		}
+	.PogoClassification div {
+		display: grid;
+		grid-template-columns: 200px 60px 60px 60px;
+		text-align: center;
+		align-items: center;
+		height: 140px;
+		overflow: hidden;
+		margin-bottom: 10px;
+	}
 
-		.PogoClassification div {
-			display: grid;
-			grid-template-columns: 200px 60px 60px 60px;
-			text-align: center;
-			align-items: center;
-			height: 140px;
-			overflow: hidden;
-			margin-bottom: 10px;
-		}
+	.PogoClassification div:nth-child(odd) {
+		background: rgba(7, 42, 69, 0.9);
+	}
 
-		.PogoClassification div:nth-child(odd) {
-			background: rgba(7, 42, 69, 0.9);
-		}
+	.PogoClassification img {
+		max-width: 200px;
+		max-height: 140px;
+		display: block;
+		margin: 0 auto;
+	}
 
-		.PogoClassification img {
-			max-width: 200px;
-			max-height: 140px;
-			display: block;
-			margin: 0 auto;
-		}
+	#dialog-missingPortals .PogoClassification div {
+		height: 50px;
+	}
 
-		#dialog-missingPortals .PogoClassification div {
-			height: 50px;
-		}
+	img.photo,
+	.ingressLocation,
+	.pogoLocation {
+		cursor: zoom-in;
+	}
 
-		img.photo,
-		.ingressLocation,
-		.pogoLocation {
-			cursor: zoom-in;
-		}
+	.PoGo-PortalAnimation {
+		width: 30px;
+		height: 30px;
+		background-color: rgba(255, 255, 255, 0.5);
+		border-radius: 50%;
+		box-shadow: 0px 0px 4px white;
+		animation-duration: 1s;
+		animation-name: shrink;
+	}
 
-		.PoGo-PortalAnimation {
+	@keyframes shrink {
+		from {
 			width: 30px;
 			height: 30px;
-			background-color: rgba(255, 255, 255, 0.5);
-			border-radius: 50%;
-			box-shadow: 0px 0px 4px white;
-			animation-duration: 1s;
-			animation-name: shrink;
+			top: 0px;
+			left: 0px;
 		}
 
-		@keyframes shrink {
-			from {
-				width: 30px;
-				height: 30px;
-				top: 0px;
-				left: 0px;
-			}
+		to {
+			width: 10px;
+			height: 10px;
+			top: 10px;
+			left: 10px;
+		}
+	}
 
-			to {
-				width: 10px;
-				height: 10px;
-				top: 10px;
-				left: 10px;
-			}
+	.PoGo-PortalAnimationHover {
+		background-color: rgb(255, 102, 0, 0.8);
+		border-radius: 50%;
+		animation-duration: 1s;
+		animation-name: shrinkHover;
+		animation-iteration-count: infinite;
+	}
+
+	@keyframes shrinkHover {
+		from {
+			width: 40px;
+			height: 40px;
+			top: 0px;
+			left: 0px;
 		}
 
-		.PoGo-PortalAnimationHover {
-			background-color: rgb(255, 102, 0, 0.8);
-			border-radius: 50%;
-			animation-duration: 1s;
-			animation-name: shrinkHover;
-			animation-iteration-count: infinite;
+		to {
+			width: 20px;
+			height: 20px;
+			top: 10px;
+			left: 10px;
 		}
+	}
 
-		@keyframes shrinkHover {
-			from {
-				width: 40px;
-				height: 40px;
-				top: 0px;
-				left: 0px;
-			}
+	#sidebarPogo {
+		color: #eee;
+		padding: 2px 5px;
+	}
 
-			to {
-				width: 20px;
-				height: 20px;
-				top: 10px;
-				left: 10px;
-			}
-		}
+	#sidebarPogo span {
+		margin-right: 5px;
+	}
 
-		#sidebarPogo {
-			color: #eee;
-			padding: 2px 5px;
-		}
+	.refreshingData,
+	.refreshingPortalCount {
+		opacity: 0.5;
+		pointer-events: none;
+	}
 
-		#sidebarPogo span {
-			margin-right: 5px;
-		}
+	#sidebarPogo.mobile {
+		width: 100%;
+		background: rebeccapurple;
+		display: flex;
+	}
 
-		.refreshingData,
-		.refreshingPortalCount {
-			opacity: 0.5;
-			pointer-events: none;
-		}
+	#sidebarPogo.mobile > div {
+		margin-right: 1em;
+	}
 
-		#sidebarPogo.mobile {
-			width: 100%;
-			background: rebeccapurple;
-			display: flex;
-		}
+	.pogo-colors input[type=color] {
+		border: 0;
+		padding: 0;
+	}
 
-		#sidebarPogo.mobile > div {
-			margin-right: 1em;
-		}
+	.PogoListing .header {
+		align-items: center;
+		display: grid;
+		grid-column-gap: 5px;
+		grid-template-columns: 1fr 40px 40px 40px;
+		text-align: center;
+	}
 
-		.pogo-colors input[type=color] {
-			border: 0;
-			padding: 0;
-		}
+	.PogoListing .header > span + span {
+		font-size: 90%;
+		font-weight: normal;
+	}
 
-		.PogoListing .header {
-			align-items: center;
-			display: grid;
-			grid-column-gap: 5px;
-			grid-template-columns: 1fr 40px 40px 40px;
-			text-align: center;
-		}
+	.PogoListing .PortalSummary {
+		align-items: center;
+		display: grid;
+		grid-column-gap: 5px;
+		grid-template-columns: 100px 1fr 40px 40px 40px;
+		height: 70px;
+		margin-bottom: 10px;
+		overflow: hidden;
+		text-align: center;
+	}
 
-		.PogoListing .header > span + span {
-			font-size: 90%;
-			font-weight: normal;
-		}
+	.PogoListing div div:nth-child(odd) {
+		background: rgba(7, 42, 69, 0.9);
+	}
 
-		.PogoListing .PortalSummary {
-			align-items: center;
-			display: grid;
-			grid-column-gap: 5px;
-			grid-template-columns: 100px 1fr 40px 40px 40px;
-			height: 70px;
-			margin-bottom: 10px;
-			overflow: hidden;
-			text-align: center;
-		}
+	.PogoListing img {
+		max-width: 100px;
+		max-height: 70px;
+		display: block;
+		margin: 0 auto;
+	}
 
-		.PogoListing div div:nth-child(odd) {
-			background: rgba(7, 42, 69, 0.9);
-		}
+	.Pogo_Photos,
+	.Pogo_Votes {
+		width: 100%;
+		text-align: right;
+	}
 
-		.PogoListing img {
-			max-width: 100px;
-			max-height: 70px;
-			display: block;
-			margin: 0 auto;
-		}
-
-		.Pogo_Photos,
-		.Pogo_Votes {
-			width: 100%;
-			text-align: right;
-		}
-
-		`).appendTo('head');
+	`).appendTo('head');
 		};
 
 		// A portal has been received.
@@ -3767,25 +3764,6 @@
 		}
 
 		// PLUGIN END //////////////////////////////////////////////////////////
-
-
-/*! Leaflet.Geodesic 2.5.5-0 - (c) Henry Thasler - https://github.com/henrythasler/Leaflet.Geodesic */
-!function(t,n){"object"==typeof exports&&"undefined"!=typeof module?n(exports,require("leaflet")):"function"==typeof define&&define.amd?define(["exports","leaflet"],n):n(((t=t||self).L=t.L||{},t.L.geodesic={}),t.L)}(this,(function(t,n){"use strict";
-/*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Array&&function(t,n){t.__proto__=n}||function(t,n){for(var e in n)n.hasOwnProperty(e)&&(t[e]=n[e])})(t,n)};function i(t,n){function i(){this.constructor=t}e(t,n),t.prototype=null===n?Object.create(n):(i.prototype=n.prototype,new i)}var a=function(){return(a=Object.assign||function(t){for(var n,e=1,i=arguments.length;e<i;e++)for(var a in n=arguments[e])Object.prototype.hasOwnProperty.call(n,a)&&(t[a]=n[a]);return t}).apply(this,arguments)};function s(){for(var t=0,n=0,e=arguments.length;n<e;n++)t+=arguments[n].length;var i=Array(t),a=0;for(n=0;n<e;n++)for(var s=arguments[n],o=0,r=s.length;o<r;o++,a++)i[a]=s[o];return i}var o=function(){function t(t){this.options={wrap:!0,steps:3},this.ellipsoid={a:6378137,b:6356752.3142,f:1/298.257223563},this.options=a(a({},this.options),t)}return t.prototype.toRadians=function(t){return t*Math.PI/180},t.prototype.toDegrees=function(t){return 180*t/Math.PI},t.prototype.mod=function(t,n){var e=t%n;return e<0?e+n:e},t.prototype.wrap360=function(t){return 0<=t&&t<360?t:this.mod(t,360)},t.prototype.wrap=function(t,n){return void 0===n&&(n=360),-n<=t&&t<=n?t:this.mod(t+n,2*n)-n},t.prototype.direct=function(t,n,e,i){void 0===i&&(i=100);var a=this.toRadians(t.lat),s=this.toRadians(t.lng),o=this.toRadians(n),r=e,h=1e3*Number.EPSILON,l=this.ellipsoid,c=l.a,p=l.b,u=l.f,g=Math.sin(o),f=Math.cos(o),d=(1-u)*Math.tan(a),M=1/Math.sqrt(1+d*d),L=d*M,y=Math.atan2(d,f),v=M*g,w=1-v*v,m=w*(c*c-p*p)/(p*p),b=1+m/16384*(4096+m*(m*(320-175*m)-768)),E=m/1024*(256+m*(m*(74-47*m)-128)),S=r/(p*b),O=null,P=null,R=null,x=null,D=0;do{R=Math.cos(2*y+S),x=S,S=r/(p*b)+E*(O=Math.sin(S))*(R+E/4*((P=Math.cos(S))*(2*R*R-1)-E/6*R*(4*O*O-3)*(4*R*R-3)))}while(Math.abs(S-x)>h&&++D<i);if(D>=i)throw new EvalError("Direct vincenty formula failed to converge after "+i+" iterations \n                (start="+t.lat+"/"+t.lng+"; bearing="+n+"; distance="+e+")");var G=L*O-M*P*f,N=Math.atan2(L*P+M*O*f,(1-u)*Math.sqrt(v*v+G*G)),j=u/16*w*(4+u*(4-3*w)),k=s+(Math.atan2(O*g,M*P-L*O*f)-(1-j)*u*v*(S+j*O*(R+j*P*(2*R*R-1)))),_=Math.atan2(v,-G);return{lat:this.toDegrees(N),lng:this.toDegrees(k),bearing:this.wrap360(this.toDegrees(_))}},t.prototype.inverse=function(t,e,i,a){void 0===i&&(i=100),void 0===a&&(a=!0);var s=t,o=e,r=this.toRadians(s.lat),h=this.toRadians(s.lng),l=this.toRadians(o.lat),c=this.toRadians(o.lng),p=Math.PI,u=Number.EPSILON,g=this.ellipsoid,f=g.a,d=g.b,M=g.f,L=c-h,y=(1-M)*Math.tan(r),v=1/Math.sqrt(1+y*y),w=y*v,m=(1-M)*Math.tan(l),b=1/Math.sqrt(1+m*m),E=m*b,S=Math.abs(L)>p/2||Math.abs(l-r)>p/2,O=L,P=null,R=null,x=S?p:0,D=0,G=S?-1:1,N=null,j=1,k=null,_=1,q=null,I=null,C=0;do{if(N=b*(P=Math.sin(O))*(b*P)+(v*E-w*b*(R=Math.cos(O)))*(v*E-w*b*R),Math.abs(N)<u)break;if(G=w*E+v*b*R,I=O,O=L+(1-(q=M/16*(_=1-(k=v*b*P/(D=Math.sqrt(N)))*k)*(4+M*(4-3*_))))*M*k*((x=Math.atan2(D,G))+q*D*((j=0!==_?G-2*w*E/_:0)+q*G*(2*j*j-1))),(S?Math.abs(O)-p:Math.abs(O))>p)throw new EvalError("λ > π")}while(Math.abs(O-I)>1e-12&&++C<i);if(C>=i){if(a)return this.inverse(t,new n.LatLng(e.lat,e.lng-.01),i,a);throw new EvalError("Inverse vincenty formula failed to converge after "+i+" iterations \n                    (start="+t.lat+"/"+t.lng+"; dest="+e.lat+"/"+e.lng+")")}var A=_*(f*f-d*d)/(d*d),B=A/1024*(256+A*(A*(74-47*A)-128)),J=d*(1+A/16384*(4096+A*(A*(320-175*A)-768)))*(x-B*D*(j+B/4*(G*(2*j*j-1)-B/6*j*(4*D*D-3)*(4*j*j-3)))),T=Math.abs(N)<u?0:Math.atan2(b*P,v*E-w*b*R),U=Math.abs(N)<u?p:Math.atan2(v*P,-w*b+v*E*R);return{distance:J,initialBearing:Math.abs(J)<u?NaN:this.wrap360(this.toDegrees(T)),finalBearing:Math.abs(J)<u?NaN:this.wrap360(this.toDegrees(U))}},t.prototype.intersection=function(t,e,i,a){var s=this.toRadians(t.lat),o=this.toRadians(t.lng),r=this.toRadians(i.lat),h=this.toRadians(i.lng),l=this.toRadians(e),c=this.toRadians(a),p=r-s,u=h-o,g=Math.PI,f=Number.EPSILON,d=2*Math.asin(Math.sqrt(Math.sin(p/2)*Math.sin(p/2)+Math.cos(s)*Math.cos(r)*Math.sin(u/2)*Math.sin(u/2)));if(Math.abs(d)<f)return t;var M=(Math.sin(r)-Math.sin(s)*Math.cos(d))/(Math.sin(d)*Math.cos(s)),L=(Math.sin(s)-Math.sin(r)*Math.cos(d))/(Math.sin(d)*Math.cos(r)),y=Math.acos(Math.min(Math.max(M,-1),1)),v=Math.acos(Math.min(Math.max(L,-1),1)),w=l-(Math.sin(h-o)>0?y:2*g-y),m=(Math.sin(h-o)>0?2*g-v:v)-c;if(0===Math.sin(w)&&0===Math.sin(m))return null;if(Math.sin(w)*Math.sin(m)<0)return null;var b=-Math.cos(w)*Math.cos(m)+Math.sin(w)*Math.sin(m)*Math.cos(d),E=Math.atan2(Math.sin(d)*Math.sin(w)*Math.sin(m),Math.cos(m)+Math.cos(w)*b),S=Math.asin(Math.min(Math.max(Math.sin(s)*Math.cos(E)+Math.cos(s)*Math.sin(E)*Math.cos(l),-1),1)),O=o+Math.atan2(Math.sin(l)*Math.sin(E)*Math.cos(s),Math.cos(E)-Math.sin(s)*Math.sin(S));return new n.LatLng(this.toDegrees(S),this.toDegrees(O))},t.prototype.midpoint=function(t,e){var i=this.toRadians(t.lat),a=this.toRadians(t.lng),s=this.toRadians(e.lat),o=this.toRadians(e.lng-t.lng),r=Math.cos(i),h=0,l=Math.sin(i),c={x:r+Math.cos(s)*Math.cos(o),y:h+Math.cos(s)*Math.sin(o),z:l+Math.sin(s)},p=Math.atan2(c.z,Math.sqrt(c.x*c.x+c.y*c.y)),u=a+Math.atan2(c.y,c.x);return new n.LatLng(this.toDegrees(p),this.toDegrees(u))},t}(),r=function(){function t(t){this.geodesic=new o,this.steps=t&&void 0!==t.steps?t.steps:3}return t.prototype.recursiveMidpoint=function(t,n,e){var i=[t,n],a=this.geodesic.midpoint(t,n);return e>0?(i.splice.apply(i,s([0,1],this.recursiveMidpoint(t,a,e-1))),i.splice.apply(i,s([i.length-2,2],this.recursiveMidpoint(a,n,e-1)))):i.splice(1,0,a),i},t.prototype.line=function(t,n){return this.recursiveMidpoint(t,n,Math.min(8,this.steps))},t.prototype.multiLineString=function(t){var n=this,e=[];return t.forEach((function(t){for(var i=[],a=1;a<t.length;a++)i.splice.apply(i,s([i.length-1,1],n.line(t[a-1],t[a])));e.push(i)})),e},t.prototype.lineString=function(t){return this.multiLineString([t])[0]},t.prototype.splitLine=function(t,e){var i={point:new n.LatLng(89.9,-180.0000001),bearing:180},a={point:new n.LatLng(89.9,180.0000001),bearing:180},s=new n.LatLng(t.lat,t.lng),o=new n.LatLng(e.lat,e.lng);s.lng=this.geodesic.wrap(s.lng,360),o.lng=this.geodesic.wrap(o.lng,360),o.lng-s.lng>180?o.lng=o.lng-360:o.lng-s.lng<-180&&(o.lng=o.lng+360);var r=[[new n.LatLng(s.lat,this.geodesic.wrap(s.lng,180)),new n.LatLng(o.lat,this.geodesic.wrap(o.lng,180))]];if(s.lng>=-180&&s.lng<=180){if(o.lng<-180){var h=this.geodesic.inverse(s,o).initialBearing;(l=this.geodesic.intersection(s,h,i.point,i.bearing))&&(r=[[s,l],[new n.LatLng(l.lat,l.lng+360),new n.LatLng(o.lat,o.lng+360)]])}else if(o.lng>180){h=this.geodesic.inverse(s,o).initialBearing;(l=this.geodesic.intersection(s,h,a.point,a.bearing))&&(r=[[s,l],[new n.LatLng(l.lat,l.lng-360),new n.LatLng(o.lat,o.lng-360)]])}}else if(o.lng>=-180&&o.lng<=180)if(s.lng<-180){h=this.geodesic.inverse(s,o).initialBearing;(l=this.geodesic.intersection(s,h,i.point,i.bearing))&&(r=[[new n.LatLng(s.lat,s.lng+360),new n.LatLng(l.lat,l.lng+360)],[l,o]])}else if(s.lng>180){var l;h=this.geodesic.inverse(s,o).initialBearing;(l=this.geodesic.intersection(s,h,i.point,i.bearing))&&(r=[[new n.LatLng(s.lat,s.lng-360),new n.LatLng(l.lat,l.lng-360)],[l,o]])}return r},t.prototype.splitMultiLineString=function(t){var n=this,e=[];return t.forEach((function(t){if(1===t.length)e.push(t);else{for(var i=[],a=1;a<t.length;a++){var s=n.splitLine(t[a-1],t[a]);i.pop(),i=i.concat(s[0]),s.length>1&&(e.push(i),i=s[1])}e.push(i)}})),e},t.prototype.wrapMultiLineString=function(t){var e=[];return t.forEach((function(t){var i=[],a=null;t.forEach((function(t){if(null===a)i.push(t),a=t;else{var e=t.lng-a.lng,s=Math.sign(e/180)*Math.ceil(Math.abs(e/180));Math.abs(e)>180?i.push(new n.LatLng(t.lat,t.lng-180*s)):i.push(new n.LatLng(t.lat,t.lng))}})),e.push(i)})),e},t.prototype.circle=function(t,e){for(var i=[],a=0;a<this.steps;a++){var s=this.geodesic.direct(t,360/this.steps*a,e);i.push(new n.LatLng(s.lat,s.lng))}return i.push(new n.LatLng(i[0].lat,i[0].lng)),i},t.prototype.splitCircle=function(t){var n=[];return 3===(n=this.splitMultiLineString([t])).length&&(n[2]=s(n[2],n[0]),n.shift()),n},t.prototype.distance=function(t,e){return this.geodesic.inverse(new n.LatLng(t.lat,this.geodesic.wrap(t.lng,180)),new n.LatLng(e.lat,this.geodesic.wrap(e.lng,180))).distance},t.prototype.multilineDistance=function(t){var n=this,e=[];return t.forEach((function(t){for(var i=0,a=1;a<t.length;a++)i+=n.distance(t[a-1],t[a]);e.push(i)})),e},t.prototype.updateStatistics=function(t,n){var e={};return e.distanceArray=this.multilineDistance(t),e.totalDistance=e.distanceArray.reduce((function(t,n){return t+n}),0),e.points=0,t.forEach((function(t){e.points+=t.reduce((function(t){return t+1}),0)})),e.vertices=0,n.forEach((function(t){e.vertices+=t.reduce((function(t){return t+1}),0)})),e},t}();function h(t){return"object"==typeof t&&null!==t&&"lat"in t&&"lng"in t&&"number"==typeof t.lat&&"number"==typeof t.lng}function l(t){return t instanceof Array&&"number"==typeof t[0]&&"number"==typeof t[1]}function c(t){return t instanceof n.LatLng||(!!l(t)||!!h(t))}function p(t){if(t instanceof n.LatLng)return t;if(l(t))return new n.LatLng(t[0],t[1]);if(h(t))return new n.LatLng(t.lat,t.lng);throw new Error("L.LatLngExpression expected. Unknown object found.")}var u=function(t){function e(e,i){var s=t.call(this,[],i)||this;return s.defaultOptions={wrap:!0,steps:3},s.statistics={},s.points=[],n.Util.setOptions(s,a(a({},s.defaultOptions),i)),s.geom=new r(s.options),void 0!==e&&s.setLatLngs(e),s}return i(e,t),e.prototype.updateGeometry=function(){var n;if(n=this.geom.multiLineString(this.points),this.statistics=this.geom.updateStatistics(this.points,n),this.options.wrap){var e=this.geom.splitMultiLineString(n);t.prototype.setLatLngs.call(this,e)}else t.prototype.setLatLngs.call(this,this.geom.wrapMultiLineString(n))},e.prototype.setLatLngs=function(t){return this.points=function(t){for(var n=[],e=function(e){if(c(e)){var i=[];return t.forEach((function(t){i.push(p(t))})),n.push(i),"break"}if(!(e instanceof Array))throw new Error("L.LatLngExpression[] | L.LatLngExpression[][] expected. Unknown object found.");if(!c(e[0]))throw new Error("L.LatLngExpression[] | L.LatLngExpression[][] expected. Unknown object found.");var a=[];e.forEach((function(t){a.push(p(t))})),n.push(a)},i=0,a=t;i<a.length;i++){if("break"===e(a[i]))break}return n}(t),this.updateGeometry(),this},e.prototype.addLatLng=function(t,n){var e=p(t);return 0===this.points.length?this.points.push([e]):void 0===n?this.points[this.points.length-1].push(e):n.push(e),this.updateGeometry(),this},e.prototype.fromGeoJson=function(t){var e=[],i=[];return"FeatureCollection"===t.type?i=t.features:"Feature"===t.type?i=[t]:["MultiPoint","LineString","MultiLineString","Polygon","MultiPolygon"].includes(t.type)?i=[{type:"Feature",geometry:t,properties:{}}]:console.log('[Leaflet.Geodesic] fromGeoJson() - Type "'+t.type+'" not supported.'),i.forEach((function(t){switch(t.geometry.type){case"MultiPoint":case"LineString":e=s(e,[n.GeoJSON.coordsToLatLngs(t.geometry.coordinates,0)]);break;case"MultiLineString":case"Polygon":e=s(e,n.GeoJSON.coordsToLatLngs(t.geometry.coordinates,1));break;case"MultiPolygon":t.geometry.coordinates.forEach((function(t){e=s(e,n.GeoJSON.coordsToLatLngs(t,1))}));break;default:console.log('[Leaflet.Geodesic] fromGeoJson() - Type "'+t.geometry.type+'" not supported.')}})),e.length&&this.setLatLngs(e),this},e.prototype.distance=function(t,n){return this.geom.distance(p(t),p(n))},e}(n.Polyline),g=function(t){function e(e,i){var s=t.call(this,[],i)||this;s.defaultOptions={wrap:!0,steps:24,fill:!0,noClip:!0},s.statistics={},n.Util.setOptions(s,a(a({},s.defaultOptions),i));var o=s.options;return s.radius=void 0===o.radius?1e6:o.radius,s.center=void 0===e?new n.LatLng(0,0):p(e),s.geom=new r(s.options),s.update(),s}return i(e,t),e.prototype.update=function(){var n=this.geom.circle(this.center,this.radius);if(this.statistics=this.geom.updateStatistics([[this.center]],[n]),this.statistics.totalDistance=this.geom.multilineDistance([n]).reduce((function(t,n){return t+n}),0),this.options.wrap){var e=this.geom.splitCircle(n);t.prototype.setLatLngs.call(this,e)}else t.prototype.setLatLngs.call(this,n)},e.prototype.distanceTo=function(t){var n=p(t);return this.geom.distance(this.center,n)},e.prototype.setLatLng=function(t,n){this.center=p(t),this.radius=n||this.radius,this.update()},e.prototype.setRadius=function(t,n){this.radius=t,this.center=n?p(n):this.center,this.update()},e}(n.Polyline);void 0!==window.L&&(window.L.Geodesic=u,window.L.geodesic=function(){for(var t=[],n=0;n<arguments.length;n++)t[n]=arguments[n];return new(u.bind.apply(u,s([void 0],t)))},window.L.GeodesicCircle=g,window.L.geodesiccircle=function(){for(var t=[],n=0;n<arguments.length;n++)t[n]=arguments[n];return new(g.bind.apply(g,s([void 0],t)))}),t.GeodesicCircleClass=g,t.GeodesicLine=u,Object.defineProperty(t,"__esModule",{value:!0})}));
-
 
 		setup.info = plugin_info; //add the script info data to the function as a property
 		// if IITC has already booted, immediately run the 'setup' function
