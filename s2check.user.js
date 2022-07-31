@@ -1,12 +1,12 @@
 // ==UserScript==
-// @id           s2check@alfonsoml
 // @name         Pogo Tools
+// @id           s2check@alfonsoml
 // @category     Layer
 // @namespace    https://gitlab.com/AlfonsoML/pogo-s2/
 // @downloadURL  https://gitlab.com/AlfonsoML/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/AlfonsoML/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.99
+// @version      0.100
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://intel.ingress.com/*
@@ -1019,6 +1019,10 @@
 			chkThisIsPogo.addEventListener('change', e => {
 				settings.thisIsPogo = chkThisIsPogo.checked;
 				saveSettings();
+	
+				// update status
+				storeIngressLayerDefaultStatus();
+
 				setThisIsPogo();
 			});
 
@@ -3489,7 +3493,7 @@
 				return;
 			}
 
-			const enabled = map._layers[layerId] != null;
+			const enabled = map._layers[layerId] != null || layerDefaultStatus[name];
 			if (enabled) {
 				// Don't remove base layer if it's used
 				if (isBase)
@@ -3509,34 +3513,75 @@
 				// delete from object
 				delete layers[layerId];
 			}
-			window.layerChooser._update();
 			removedLayers[name] = {
 				layer: leafletLayer,
 				enabled: enabled,
 				isBase: isBase
 			};
-			window.updateDisplayedLayerGroup(name, enabled);
+			window.layerChooser._update();
+			if (window.updateDisplayedLayerGroup)
+				window.updateDisplayedLayerGroup(name, enabled);
 		}
 		const removedLayers = {};
 		let portalsLayerGroup;
+		let layerDefaultStatus;
+
+		const IngressLayers = [
+			'Fields',
+			'Links',
+			'DEBUG Data Tiles',
+			'Artifacts',
+			//'Ornaments',
+			'Beacons',
+			'Frackers',
+
+			'Unclaimed/Placeholder Portals',
+			'Level 1 Portals',
+			'Level 2 Portals',
+			'Level 3 Portals',
+			'Level 4 Portals',
+			'Level 5 Portals',
+			'Level 6 Portals',
+			'Level 7 Portals',
+			'Level 8 Portals'
+		];
+
+		function storeIngressLayerDefaultStatus() {
+			layerDefaultStatus = {};
+
+			const layers = window.layerChooser._layers;
+			IngressLayers.forEach(name => {
+				const layerData = layers.find(l => l.name == name);
+				if (!layerData)
+					return;
+
+				const id = layerData.layer._leaflet_id;
+				layerDefaultStatus[name] = window.map._layers[id] != null;
+			});
+			localStorage[KEY_SETTINGS + 'layers'] = JSON.stringify(layerDefaultStatus);
+		}
 
 		function removeIngressLayers() {
+			// By default now IITC stores the visibility status automatically, so we must keep track on our own which Ingress layers are visible 
+			// to restore them upon disabling This is Pogo if it was enabled on start.
+			if (!layerDefaultStatus) {
+				const tmp = localStorage[KEY_SETTINGS + 'layers'];
+				if (tmp) {
+					try	{
+						layerDefaultStatus = JSON.parse(tmp);
+					} catch (e) { // eslint-disable-line no-empty
+					}
+				}
+				if (!layerDefaultStatus) {
+					storeIngressLayerDefaultStatus();
+				}
+			}
 			removeLayer('CartoDB Dark Matter');
 			removeLayer('CartoDB Positron');
 			removeLayer('Google Default Ingress Map');
 
-			removeLayer('Fields');
-			removeLayer('Links');
-			removeLayer('DEBUG Data Tiles');
-			removeLayer('Artifacts');
-			//removeLayer('Ornaments');
-			removeLayer('Beacons');
-			removeLayer('Frackers');
+			IngressLayers.forEach(removeLayer);
 
-			removeLayer('Unclaimed/Placeholder Portals');
-			for (let i = 1; i <= 8; i++) {
-				removeLayer('Level ' + i + ' Portals');
-			}
 			//removeLayer('Resistance');
 			//removeLayer('Enlightened');
 			mergePortalLayers();
@@ -3578,7 +3623,8 @@
 				delete layers[layerId];
 			}
 			window.layerChooser._update();
-			window.updateDisplayedLayerGroup(name, enabled);
+			if (window.updateDisplayedLayerGroup)
+				window.updateDisplayedLayerGroup(name, enabled);
 
 			if (typeof portalsLayerGroup.off != 'undefined')
 				portalsLayerGroup.off();
@@ -3595,8 +3641,14 @@
 				const info = removedLayers[name];
 				if (info.isBase)
 					window.layerChooser.addBaseLayer(info.layer, name);
-				else
-					window.addLayerGroup(name, info.layer, info.enabled);
+				else {
+					if (window.layerChooser.addOverlay) {
+						window.layerChooser.addOverlay(info.layer, name, {enabled: info.enabled, 'default': info.enabled});
+						window.layerChooser.showLayer(info.layer, info.enabled);
+					} else {
+						window.addLayerGroup(name, info.layer, info.enabled);
+					}
+				}
 			});
 		}
 
