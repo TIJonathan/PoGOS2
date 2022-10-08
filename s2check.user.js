@@ -347,7 +347,24 @@
 			}
 
 			if (typeof window.saveFile != 'undefined') {
-				//window.saveFile(text, filename, 'application/json');
+				const element = document.createElement('a');
+
+				// http://stackoverflow.com/questions/13405129/javascript-create-and-save-file
+				const file = new Blob([text], {type: 'text/plain'});
+				const objectURL = URL.createObjectURL(file);
+				element.setAttribute('href', objectURL);
+
+				element.setAttribute('download', filename);
+
+				element.style.display = 'none';
+				document.body.appendChild(element);
+
+				element.click();
+
+				setTimeout(function () {
+					document.body.removeChild(element);
+					URL.revokeObjectURL(objectURL);
+				}, 0);
 				return;
 			}
 
