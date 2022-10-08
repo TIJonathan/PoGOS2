@@ -2,9 +2,9 @@
 // @name         Pogo Tools
 // @id           s2check@alfonsoml
 // @category     Layer
-// @namespace    https://gitlab.com/AlfonsoML/pogo-s2/
-// @downloadURL  https://gitlab.com/AlfonsoML/pogo-s2/raw/master/s2check.user.js
-// @homepageURL  https://gitlab.com/AlfonsoML/pogo-s2/
+// @namespace    https://gitlab.com/NvlblNm/pogo-s2/
+// @downloadURL  https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
+// @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
 // @version      0.100
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
@@ -347,7 +347,7 @@
 			}
 
 			if (typeof window.saveFile != 'undefined') {
-				window.saveFile(text, filename, 'application/json');
+				//window.saveFile(text, filename, 'application/json');
 				return;
 			}
 
