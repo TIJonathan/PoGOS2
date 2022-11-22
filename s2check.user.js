@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name         Pogo Tools
+// @name         Pogo Tools w/ PoGOHWH
 // @id           s2check@alfonsoml
 // @category     Layer
 // @namespace    https://gitlab.com/NvlblNm/pogo-s2/
 // @downloadURL  https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.100
+// @version      0.101
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://intel.ingress.com/*
@@ -517,7 +517,7 @@
 
 		let pokestops = {};
 		let gyms = {};
-		// Portals that aren't marked as PoGo items
+		// Portals that are marked as no PoGo items
 		let notpogo = {};
 
 		let allPortals = {};
@@ -546,6 +546,7 @@
 		let regionLayer; // parent layer
 		let stopLayerGroup; // pokestops
 		let gymLayerGroup; // gyms
+		let notpogoLayerGroup; // not in PoGO
 		let nearbyLayerGroup; // circles to mark the too near limit
 		let gridLayerGroup; // s2 grid
 		let cellLayerGroup; // cell shading and borders
@@ -556,6 +557,7 @@
 		// Group of items added to the layer
 		let stopLayers = {};
 		let gymLayers = {};
+		let notpogoLayers = {};
 		let nearbyCircles = {};
 
 		// grouping of the portals in the second level of the grid
@@ -621,6 +623,38 @@
 				missingStops3: {
 					color: '#FF5722',
 					opacity: 1
+				},
+				stopInner: {
+					color: '#666666',
+					opacity: 1
+				},
+				stopOuter: {
+					color: '#0000cd', // mediumblue
+					opacity: 1
+				},
+				photoStopInner: {
+					color: '#00bfff', // deepskyblue
+					opacity: 1
+				},
+				gymInner: {
+					color: '#3cb371', // mediumseagreen
+					opacity: 1
+				},
+				gymOuter: {
+					color: '#f8f8ff', // ghostwhite
+					opacity: 1
+				},
+				exGymInner: {
+					color: '#ff1493', // deeppink
+					opacity: 1
+				},
+				notpogoInner: {
+					color: '#ff0000', // red
+					opacity: 1
+				},
+				notpogoOuter: {
+					color: '#8b0000', // darkred
+					opacity: 1
 				}
 			},
 			saveDataType: 'Gyms',
@@ -643,6 +677,16 @@
 			}
 			try	{
 				settings = JSON.parse(tmp);
+				if (!settings.colors.notpogoOuter) { // Migrate to new color settings
+					settings.colors.notpogoOuter = defaultSettings.colors.notpogoOuter;
+					settings.colors.notpogoInner = defaultSettings.colors.notpogoInner;
+					settings.colors.stopOuter = defaultSettings.colors.stopOuter;
+					settings.colors.photoStopInner = defaultSettings.colors.photoStopInner;
+					settings.colors.stopInner = defaultSettings.colors.stopInner;
+					settings.colors.gymInner = defaultSettings.colors.gymInner;
+					settings.colors.gymOuter = defaultSettings.colors.gymOuter;
+					settings.colors.exGymInner = defaultSettings.colors.exGymInner;
+				}
 			} catch (e) { // eslint-disable-line no-empty
 			}
 
@@ -665,6 +709,16 @@
 			}
 			if (typeof settings.promptForMissingData != 'undefined') {
 				delete settings.promptForMissingData;
+			}
+			if (!settings.colors.notpogoOuter) {
+				settings.colors.notpogoOuter = defaultSettings.colors.notpogoOuter;
+				settings.colors.notpogoInner = defaultSettings.colors.notpogoInner;
+				settings.colors.stopOuter = defaultSettings.colors.stopOuter;
+				settings.colors.photoStopInner = defaultSettings.colors.photoStopInner;
+				settings.colors.stopInner = defaultSettings.colors.stopInner;
+				settings.colors.gymInner = defaultSettings.colors.gymInner;
+				settings.colors.gymOuter = defaultSettings.colors.gymOuter;
+				settings.colors.exGymInner = defaultSettings.colors.exGymInner;
 			}
 			if (!settings.colors) {
 				resetColors();
@@ -706,6 +760,14 @@
 			data.portal.setStyle(hidePortalOwnershipStyles);
 		}
 
+		function changeLocationCircle() {
+			if (window.plugin.userLocation && window.plugin.userLocation.circle) {
+				var newRadius = settings.thisIsPogo ? 80 : 40;
+				window.plugin.userLocation.circle.setRadius(newRadius);
+				window.plugin.userLocation.onZoomEnd();
+			}
+		}
+
 		function setThisIsPogo() {
 			document.body.classList[settings.thisIsPogo ? 'add' : 'remove']('thisIsPogo');
 			// It seems that iOS has some bug in the following code, but I can't debug it.
@@ -715,6 +777,7 @@
 			try {
 				if (settings.thisIsPogo) {
 					removeIngressLayers();
+					changeLocationCircle();
 					if (chat && chat.requestPublic) {
 						originalChatRequestPublic = chat && chat.requestPublic;
 						chat.requestPublic = function () {}; // no requests for chat
@@ -742,6 +805,7 @@
 
 				} else {
 					restoreIngressLayers();
+					changeLocationCircle();
 					if (originalChatRequestPublic) {
 						chat.requestPublic = originalChatRequestPublic;
 						originalChatRequestPublic = null;
@@ -772,7 +836,7 @@
 					}
 				}
 			} catch (e) {
-				alert('Error initializing ThisIsPogo');
+				alert('Error initializing ThisIsPogo: ' + e);
 				console.log(e); // eslint-disable-line no-console
 			}
 		}
@@ -839,7 +903,7 @@
 			classifyGroup(cells, gyms, level, (cell, item) => cell.gyms.push(item));
 			classifyGroup(cells, pokestops, level, (cell, item) => cell.stops.push(item));
 			classifyGroup(cells, newPortals, level, (cell, item) => cell.notClassified.push(item));
-			classifyGroup(cells, notpogo, level, (cell, item) => {/* */});
+			classifyGroup(cells, notpogo, level, (cell, item) => cell.notpogo.push(item));
 
 			return cells;
 		}
@@ -868,7 +932,8 @@
 						gyms: [],
 						stops: [],
 						notClassified: [],
-						portals: {}
+						portals: {},
+						notpogo: []
 					};
 				}
 				callback(cells[cellId], item);
@@ -1079,6 +1144,14 @@
 				selectRow.replace('{{title}}', '1 more stop to get a gym').replace(/{{id}}/g, 'missingStops1').replace('{{width}}', '') +
 				selectRow.replace('{{title}}', '2 more stops to get a gym').replace(/{{id}}/g, 'missingStops2').replace('{{width}}', '') +
 				selectRow.replace('{{title}}', '3 more stops to get a gym').replace(/{{id}}/g, 'missingStops3').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'PokeStop inside').replace(/{{id}}/g, 'photoStopInner').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'PokeStop inside (no photo)').replace(/{{id}}/g, 'stopInner').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'PokeStop outside').replace(/{{id}}/g, 'stopOuter').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'Gym inside').replace(/{{id}}/g, 'gymInner').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'EX-Gym inside').replace(/{{id}}/g, 'exGymInner').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'Gym outside').replace(/{{id}}/g, 'gymOuter').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'Not in PoGO inside').replace(/{{id}}/g, 'notpogoInner').replace('{{width}}', '') +
+				selectRow.replace('{{title}}', 'Not in PoGO outside').replace(/{{id}}/g, 'notpogoOuter').replace('{{width}}', '') +
 				'<a id="resetColorsLink">Reset all colors</a>'
 				;
 
@@ -1097,6 +1170,7 @@
 					redrawNearbyCircles();
 				} else {
 					updateMapGrid();
+					thisPlugin.addAllMarkers();
 				}
 			};
 
@@ -1140,6 +1214,14 @@
 			configureItems('colors', 'missingStops1');
 			configureItems('colors', 'missingStops2');
 			configureItems('colors', 'missingStops3');
+			configureItems('colors', 'photoStopInner');
+			configureItems('colors', 'stopInner');
+			configureItems('colors', 'stopOuter');
+			configureItems('colors', 'gymInner');
+			configureItems('colors', 'exGymInner');
+			configureItems('colors', 'gymOuter');
+			configureItems('colors', 'notpogoInner');
+			configureItems('colors', 'notpogoOuter');
 
 			const resetColorsLink = div.querySelector('#resetColorsLink');
 			resetColorsLink.addEventListener('click', function () {
@@ -1775,6 +1857,9 @@
 			}
 			if (type === 'notpogo') {
 				delete notpogo[guid];
+				const notpogoInLayer = notpogoLayers[guid];
+				notpogoLayerGroup.removeLayer(notpogoInLayer);
+				delete notpogoLayers[guid];
 			}
 		}
 
@@ -2030,7 +2115,7 @@
 						thisPlugin.addStar(guid, lat, lng, name, type);
 				}
 			}
-
+			iterateStore(notpogo, 'notpogo');
 			iterateStore(gyms, 'gyms');
 			iterateStore(pokestops, 'pokestops');
 		};
@@ -2045,6 +2130,11 @@
 				const gymInLayer = gymLayers[gymGuid];
 				gymLayerGroup.removeLayer(gymInLayer);
 				delete gymLayers[gymGuid];
+			}
+			for (let notpogoGuid in notpogoLayers) {
+				const notpogoInLayer = notpogoLayers[notpogoGuid];
+				notpogoLayerGroup.removeLayer(notpogoInLayer);
+				delete notpogoLayers[notpogoGuid];
 			}
 			thisPlugin.addAllMarkers();
 		};
@@ -2064,44 +2154,46 @@
 
 		thisPlugin.addStar = function (guid, lat, lng, name, type) {
 			let star;
+			// Note: PoGOHWH Edition: Pokéstop and Gym markers just use CircleMarkers
+			const m = navigator.userAgent.match(/Android.*Mobile/) ? 1.5 : 1.0; // Note: the isIITCm() implementation here does not work on IITC-CE-m at least
 			if (type === 'pokestops') {
 				const pokestop = pokestops[guid];
 				const hasPhoto = typeof pokestop.photos == 'undefined' || pokestop.photos > 0;
-
-				star = new L.Marker.SVGMarker([lat, lng], {
-					title: name + (!hasPhoto ? '\r\n<br>Missing Photo, add one to make it count for Gym creation.' : ''),
-					iconOptions: {
-						className: 'pokestop' + (!hasPhoto ? ' missingPhoto' : ''),
-						html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">
-							<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>
-							<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>
-							<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>
-							</svg>`,
-						iconSize: L.point(24, 32),
-						iconAnchor: [12, 30],
-						id: 'pokestop' + guid.replace('.', '')
-					}
+				star = new L.circleMarker([lat, lng], {
+					title: name,
+					radius: 7*m,
+					weight: 5*m,
+					color: settings.colors.stopOuter.color,
+					opacity: settings.colors.stopOuter.opacity,
+					fillColor: hasPhoto ? settings.colors.photoStopInner.color : settings.colors.stopInner.color,
+					fillOpacity: hasPhoto ? settings.colors.photoStopInner.opacity : settings.colors.stopInner.opacity,
+					pane: 'pogoPaneStops'
 				});
 
 			}
 			if (type === 'gyms') {
-				// icon from https://github.com/FortAwesome/Font-Awesome/issues/9685#issuecomment-239238656
 				const gym = gyms[guid];
-				const medal = gym.medal || 'None';
-				const className = medal + 'Medal' + (gym.isEx ? ' exGym' : '');
-				star = new L.Marker.SVGMarker([lat, lng], {
+				star = new L.circleMarker([lat, lng], {
 					title: name,
-					iconOptions: {
-						className: className,
-						html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 410"><g transform="translate(-62 -45)">
-				<path class="gym-main-outline" d="M436.23 45.87C368.38 181.94 300.54 318.02 232.7 454.09c-12.48-46.6-24.97-93.19-37.45-139.78l-1.67-6.2s-7.37-.21-12.03-.72c-57.77-3.97-109.7-50.53-117.27-107.86-11.31-57.8 25.24-118.19 79.1-139.79 57.74-24.6 130.02 2.07 160 56.72 39.96-20.87 80.14-42.63 120.19-63.84z" />
-				<g class='gym-inner'><path class="ball-outline-top" d="M286.17 115.42l-59.41 31.59a48.157 48.157 0 0 0-35.7-15.96c-26.61 0-48.17 21.57-48.17 48.17.02 3.91.51 7.81 1.47 11.6l-59.45 31.62c-5.61-13.72-8.51-28.4-8.53-43.22 0-63.34 51.34-114.68 114.68-114.68 38.2.06 73.86 19.13 95.11 50.88z"/>
-				<path d="M404.7 78.26L297.06 135.6l-59.42 31.6a48.252 48.252 0 0 1 1.58 12.02c0 26.6-21.56 48.16-48.16 48.16a48.138 48.138 0 0 1-36-16.27l-59.35 31.56c21.21 31.94 57 51.17 95.35 51.23 4.26-.02 8.52-.28 12.76-.77l32.78 122.31z" class="ball-outline-bottom"/>
-				<path class="ball-outline-center" d="M191.06 144.82c19 0 34.4 15.4 34.4 34.4s-15.4 34.4-34.4 34.4c-19.01 0-34.41-15.4-34.41-34.4s15.4-34.4 34.41-34.4z"/>
-				</g></g></svg>`,
-						iconSize: L.point(36, 36),
-						id: 'gym' + guid.replace('.', '')
-					}
+					radius: 8*m,
+					weight: 6*m,
+					color: settings.colors.gymOuter.color,
+					opacity: settings.colors.gymOuter.opacity,
+					fillColor: gym.isEx ? settings.colors.exGymInner.color : settings.colors.gymInner.color,
+					fillOpacity: gym.isEx ? settings.colors.exGymInner.opacity : settings.colors.gymInner.opacity,
+					pane: 'pogoPaneGyms'
+				});
+			}
+			if (type === 'notpogo') {
+				star = new L.circleMarker([lat, lng], {
+					title: name,
+					radius: 6*m,
+					weight: 4*m,
+					color: settings.colors.notpogoOuter.color,
+					opacity: settings.colors.notpogoOuter.opacity,
+					fillColor: settings.colors.notpogoInner.color,
+					fillOpacity: settings.colors.notpogoInner.opacity,
+					pane: 'pogoPaneNotinpogo'
 				});
 			}
 
@@ -2123,6 +2215,10 @@
 			if (type === 'gyms') {
 				gymLayers[guid] = star;
 				star.addTo(gymLayerGroup);
+			}
+			if (type === 'notpogo') {
+				notpogoLayers[guid] = star;
+				star.addTo(notpogoLayerGroup);
 			}
 		};
 
@@ -2239,6 +2335,16 @@
 				margin-top: -0.7vw !important;
 			}
 		}
+
+	// TODO: should this be removed? Heck if I know, so it's probably here to stay!
+	.thisIsPogo .layer_off_warning,
+	.thisIsPogo .mods,
+	.thisIsPogo #randdetails,
+	.thisIsPogo #resodetails,
+	.thisIsPogo #historydetails,
+	.thisIsPogo #level {
+		display: none;
+	}
 
 		#PogoGymInfo {
 			color: #fff;
@@ -2527,7 +2633,21 @@
 			text-align: right;
 		}
 
-		`).appendTo('head');
+	/* NOTE: PoGOHWH Edition: Our custom Pane needs a particular Z-index */
+	.leaflet-pogoNotinpogo-pane {
+		z-index: 450;
+		pointer-events: none;
+	}
+	.leaflet-pogoStops-pane {
+		z-index: 451;
+		pointer-events: none;
+	}
+	.leaflet-pogoGyms-pane {
+		z-index: 452;
+		pointer-events: none;
+	}
+
+	`).appendTo('head');
 		};
 
 		// A portal has been received.
@@ -2712,7 +2832,7 @@
 				const data = allCells[id];
 				checkIsPortalMissing(data.gyms, data);
 				checkIsPortalMissing(data.stops, data);
-				//checkIsPortalMissing(data.notpogo);
+				checkIsPortalMissing(data.notpogo, data);
 
 				if (data.notClassified.length == 0)
 					return;
@@ -3117,7 +3237,7 @@
 				id: 'missingPortals',
 				html: div,
 				width: width + 'px',
-				title: 'These portals are missing in Ingress',
+				title: 'These wayspots are no longer available',
 				buttons: {
 				}
 			});
@@ -3663,7 +3783,14 @@
 			initSvgIcon();
 			window.addPortalHighlighter(highlighterTitle, markPortalsAsNeutral);
 
+			window.addHook('pluginUserLocation', changeLocationCircle);
+
 			loadSettings();
+
+			// NOTE: PoGOHWH Edition: Create panes just for our markers
+			map.createPane('pogoPaneNotinpogo');
+			map.createPane('pogoPaneStops');
+			map.createPane('pogoPaneGyms');
 
 			// Load data from localStorage
 			thisPlugin.loadStorage();
@@ -3690,10 +3817,10 @@
 				document.getElementById('sidebar').appendChild(sidebarPogo);
 			}
 
-			sidebarPogo.appendChild(createCounter('New pokestops', 'pokestops', promptForNewPokestops));
+			sidebarPogo.appendChild(createCounter('New wayspots', 'pokestops', promptForNewPokestops));
 			sidebarPogo.appendChild(createCounter('Review required', 'classification', promptToClassifyPokestops));
-			sidebarPogo.appendChild(createCounter('Moved portals', 'moved', promptToMovePokestops));
-			sidebarPogo.appendChild(createCounter('Missing portals', 'missing', promptToRemovePokestops));
+			sidebarPogo.appendChild(createCounter('Moved wayspots', 'moved', promptToMovePokestops));
+			sidebarPogo.appendChild(createCounter('Missing wayspots', 'missing', promptToRemovePokestops));
 			sidebarPogo.appendChild(createCounter('New Gyms', 'gyms', promptToClassifyGyms));
 			sidebarPogo.appendChild(createCounter('Cells with extra Gyms', 'extraGyms', promptToVerifyGyms));
 
@@ -3717,6 +3844,8 @@
 			window.addLayerGroup('PokeStops', stopLayerGroup, true);
 			gymLayerGroup = L.layerGroup();
 			window.addLayerGroup('Gyms', gymLayerGroup, true);
+			notpogoLayerGroup = L.layerGroup();
+			window.addLayerGroup('Not in PoGO', notpogoLayerGroup, true);
 			regionLayer = L.layerGroup();
 			window.addLayerGroup('S2 Grid', regionLayer, true);
 
