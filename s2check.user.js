@@ -2019,6 +2019,11 @@
 
 		/* POKEMON GO PORTALS LAYER */
 		thisPlugin.addAllMarkers = function () {
+			var bounds = map.getBounds();
+			var nelat = bounds.getNorthEast().lat;
+			var nelng = bounds.getNorthEast().lng;
+			var swlat = bounds.getSouthWest().lat;
+			var swlng = bounds.getSouthWest().lng;
 			function iterateStore(store, type) {
 				for (let idpogo in store) {
 					const item = store[idpogo];
@@ -2026,7 +2031,7 @@
 					const lng = item.lng;
 					const guid = item.guid;
 					const name = item.name;
-					if (guid != null)
+					if (guid != null && lat < nelat && lat > swlat && lng < nelng && lng > swlng)
 						thisPlugin.addStar(guid, lat, lng, name, type);
 				}
 			}
@@ -3732,8 +3737,6 @@
 			countLayer = L.layerGroup();
 			window.addLayerGroup('PoI in cell counter', countLayer, false);
 
-			thisPlugin.addAllMarkers();
-
 			const toolbox = document.getElementById('toolbox');
 
 			const buttonPoGo = document.createElement('a');
@@ -3761,6 +3764,8 @@
 					updateMapGrid();
 				}
 			});
+			map.on('zoomend', thisPlugin.resetAllMarkers);
+			map.on('moveend', thisPlugin.resetAllMarkers);
 
 			// add ids to the links that we want to be able to hide
 			const links = document.querySelectorAll('#toolbox > a');
