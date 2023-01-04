@@ -3,7 +3,7 @@ This is script to that tries to help finding out info about Pokestops and Gyms i
 
 # PoGO Tools, PoGOHWH Edition, Merged Edition
 
-> This is a fork of the original [Pogo-Tools](https://gitlab.com/AlfonsoML/pogo-s2/) IITC Plugin which no longer exists because wayfarer isn't healthy for you, for [IITC-CE](https://iitc.modos189.ru/). You're instead viewing another [Pogo-Tools](https://gilab.com/NvlblNm/pogo-s2/) fork which has now merged the PoGOHWH fork on top of Alfonso's additional changes.
+> This is a fork of the original [Pogo-Tools](https://gitlab.com/AlfonsoML/pogo-s2/) IITC Plugin which no longer exists because wayfarer isn't healthy for you, for [IITC-CE](https://iitc.modos189.ru/). You're instead viewing another [Pogo-Tools](https://gitlab.com/NvlblNm/pogo-s2/) fork which has now merged the PoGOHWH fork on top of Alfonso's additional changes.
 >
 > The aim of this fork is to make this addon much faster by moving back to native Leaflet markers instead of custom SVGs inside div icons, while also including all the wonderful work that Alfonso continued to do after this fork was created.
 > The original addon grinds even the fastest of machines to a halt and is often unusuable on phones because of the overhead of these SVG icons, though I didn't personally experience this because I'm not a greedy monster who marks every Pokestop.
