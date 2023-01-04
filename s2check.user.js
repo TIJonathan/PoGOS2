@@ -4,7 +4,7 @@
 // @category     Layer
 // @namespace    https://gitlab.com/NvlblNm/pogo-s2/
 // @downloadURL  https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
-// @updateURL  https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
+// @updateURL    https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
 // @version      0.101
