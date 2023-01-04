@@ -45,11 +45,11 @@
 
 	 NOTE: compared to the google S2 geometry library, we vary from their code in the following ways
 	 - cell IDs: they combine face and the hilbert curve position into a single 64 bit number. this gives efficient space
-							 and speed. javascript doesn't have appropriate data types, and speed is not cricical, so we use
-							 as [face,[bitpair,bitpair,...]] instead
+	 and speed. javascript doesn't have appropriate data types, and speed is not cricical, so we use
+	 as [face,[bitpair,bitpair,...]] instead
 	 - i,j: they always use 30 bits, adjusting as needed. we use 0 to (1<<level)-1 instead
-					(so GetSizeIJ for a cell is always 1)
-	*/
+	 (so GetSizeIJ for a cell is always 1)
+	 */
 
 	function wrapper(plugin_info) {
 		'use strict';
@@ -271,8 +271,8 @@
 		};
 
 		/** Our code
-		* For safety, S2 must be initialized before our code
-		*/
+		 * For safety, S2 must be initialized before our code
+		 */
 
 		// based on https://github.com/iatkin/leaflet-svgicon
 		function initSvgIcon() {
@@ -637,7 +637,7 @@
 					opacity: 1
 				},
 				gymInner: {
-					color: '#3cb371', // mediumseagreen
+					color: '#F71208', // red
 					opacity: 1
 				},
 				gymOuter: {
@@ -694,8 +694,8 @@
 		}
 
 		/**
-		* Migrate from old key to new one in order to avoid conflict with other plugin that reused this code.
-		*/
+		 * Migrate from old key to new one in order to avoid conflict with other plugin that reused this code.
+		 */
 		function loadOldSettings() {
 			const tmp = localStorage['s2check_settings'];
 			if (!tmp)
@@ -876,8 +876,8 @@
 		}
 
 		/**
-		* Filter a group of items (gyms/stops) excluding those out of the screen
-		*/
+		 * Filter a group of items (gyms/stops) excluding those out of the screen
+		 */
 		function filterItemsByMapBounds(items) {
 			const bounds = map.getBounds();
 			const filtered = {};
@@ -948,8 +948,8 @@
 		}
 
 		/**
-			Tries to add the portal photo when exporting from Ingress.com/intel
-		*/
+		 Tries to add the portal photo when exporting from Ingress.com/intel
+		 */
 		function findPhotos(items) {
 			if (!window.portals) {
 				return items;
@@ -1084,7 +1084,7 @@
 			chkThisIsPogo.addEventListener('change', e => {
 				settings.thisIsPogo = chkThisIsPogo.checked;
 				saveSettings();
-	
+
 				// update status
 				storeIngressLayerDefaultStatus();
 
@@ -1153,7 +1153,7 @@
 				selectRow.replace('{{title}}', 'Not in PoGO inside').replace(/{{id}}/g, 'notpogoInner').replace('{{width}}', '') +
 				selectRow.replace('{{title}}', 'Not in PoGO outside').replace(/{{id}}/g, 'notpogoOuter').replace('{{width}}', '') +
 				'<a id="resetColorsLink">Reset all colors</a>'
-				;
+			;
 
 			const container = dialog({
 				id: 's2Colors',
@@ -1530,8 +1530,8 @@
 		}
 
 		/**
-		*	Writes a text in the center of a cell
-		*/
+		 *	Writes a text in the center of a cell
+		 */
 		function writeInCell(cell, text) {
 			// center point
 			let center = cell.getLatLng();
@@ -1552,8 +1552,8 @@
 		}
 
 		/**
-		Show a summary with the pokestops and gyms of a L14 Cell
-		*/
+		 Show a summary with the pokestops and gyms of a L14 Cell
+		 */
 		function displayCellSummary(cell) {
 			const cellStr = cell.toString();
 
@@ -1591,8 +1591,8 @@
 						const photos = typeof portal.photos == 'undefined' ? 1 : portal.photos;
 						const votes = typeof portal.votes == 'undefined' ? 0 : portal.votes;
 						scoreData = '<span><input type="number" min=0 value=' + photos + ' title="Total number of photos of this portal" class="Pogo_Photos"></span>' +
-						'<span><input type="number" min=0 value=' + votes + ' title="Total sum of votes in the portal" class="Pogo_Votes"></span>' +
-						'<span class="Pogo_Score" title="Gym score: The pokestops with highest score will become the next gym">' + (photos + votes) + '</span>';
+							'<span><input type="number" min=0 value=' + votes + ' title="Total sum of votes in the portal" class="Pogo_Votes"></span>' +
+							'<span class="Pogo_Score" title="Gym score: The pokestops with highest score will become the next gym">' + (photos + votes) + '</span>';
 					}
 					wrapper.innerHTML = '<span class="PogoName">' + img + '</span>' +
 						'<span>' + getPortalName(portal) + '</span>' +
@@ -2140,8 +2140,8 @@
 		};
 
 		/**
-		* Update the disk color and title if the portal has no photo or switches to have at least one
-		*/
+		 * Update the disk color and title if the portal has no photo or switches to have at least one
+		 */
 		function refreshPokestopMissingPhotoStatus(portal) {
 			const hasPhoto = typeof portal.photos == 'undefined' || portal.photos > 0;
 			const guid = portal.guid;
@@ -2162,7 +2162,7 @@
 				star = new L.circleMarker([lat, lng], {
 					title: name,
 					radius: 7*m,
-					weight: 5*m,
+					weight: 2*m,
 					color: settings.colors.stopOuter.color,
 					opacity: settings.colors.stopOuter.opacity,
 					fillColor: hasPhoto ? settings.colors.photoStopInner.color : settings.colors.stopInner.color,
@@ -2175,8 +2175,8 @@
 				const gym = gyms[guid];
 				star = new L.circleMarker([lat, lng], {
 					title: name,
-					radius: 8*m,
-					weight: 6*m,
+					radius: 7*m,
+					weight: 2*m,
 					color: settings.colors.gymOuter.color,
 					opacity: settings.colors.gymOuter.opacity,
 					fillColor: gym.isEx ? settings.colors.exGymInner.color : settings.colors.gymInner.color,
@@ -2188,7 +2188,7 @@
 				star = new L.circleMarker([lat, lng], {
 					title: name,
 					radius: 6*m,
-					weight: 4*m,
+					weight: 2*m,
 					color: settings.colors.notpogoOuter.color,
 					opacity: settings.colors.notpogoOuter.opacity,
 					fillColor: settings.colors.notpogoInner.color,
@@ -3682,7 +3682,7 @@
 		}
 
 		function removeIngressLayers() {
-			// By default now IITC stores the visibility status automatically, so we must keep track on our own which Ingress layers are visible 
+			// By default now IITC stores the visibility status automatically, so we must keep track on our own which Ingress layers are visible
 			// to restore them upon disabling This is Pogo if it was enabled on start.
 			if (!layerDefaultStatus) {
 				const tmp = localStorage[KEY_SETTINGS + 'layers'];
