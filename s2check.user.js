@@ -770,9 +770,6 @@
 
 		function setThisIsPogo() {
 			document.body.classList[settings.thisIsPogo ? 'add' : 'remove']('thisIsPogo');
-			// It seems that iOS has some bug in the following code, but I can't debug it.
-			if (is_iOS())
-				return;
 
 			try {
 				if (settings.thisIsPogo) {
