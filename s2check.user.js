@@ -55,6 +55,7 @@
 	function wrapper(plugin_info) {
 		'use strict';
 		let pokestopCreation = false;
+		let currentRequestUrl = '';
 		const d2r = Math.PI / 180.0;
 		const r2d = 180.0 / Math.PI;
 
@@ -1767,17 +1768,20 @@
 						document.querySelector('.PogoStatus').innerHTML = thisPlugin.htmlStar;
 						$('.PogoStatus > a').attr('title', '');
 					}
-
-					$(portalDetails).append('<div class="PogoButtons">Pokemon Go: ' + thisPlugin.htmlStar + '</div>' +
-						`<div id="PogoGymInfo">
-						<label for='PogoGymMedal'>Medal:</label> <select id='PogoGymMedal'>
-								<option value='None'>None</option>
-								<option value='Bronze'>Bronze</option>
-								<option value='Silver'>Silver</option>
-								<option value='Gold'>Gold</option>
-								</select><br>
-						<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label><br>
-					</div>`);
+					var modHtml = "<div class='PogoButtons'>Pokemon Go: " + thisPlugin.htmlStar + "</div>"+
+						"<div id='PogoGymInfo'>" +
+						"<label for='PogoGymMedal'>Medal:</label> <select id='PogoGymMedal'>" +
+						"<option value='None'>None</option>" +
+						"<option value='Bronze'>Bronze</option>" +
+						"<option value='Silver'>Silver</option>" +
+						"<option value='Gold'>Gold</option>" +
+						"</select><br>" +
+						"<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label>"+
+					"<br></div>";
+					if(window.selectedPortal.includes('s2-pogo')){
+						modHtml+= "<div id='deleteManualPortal'><a href='#' onclick='window.deleteManualPortal()'>Delete Portal</a>";
+					}
+					$(portalDetails).append(modHtml);
 
 					document.getElementById('PogoGymMedal').addEventListener('change', ev => {
 						const guid = window.selectedPortal;
@@ -3861,7 +3865,6 @@
 				pokestopCreation = !pokestopCreation;
 				if (!pokestopCreation) {
 					map.closePopup();
-					map.removeLayer(editmarker);
 				}
 			});
 		}
@@ -3962,10 +3965,11 @@
 				} else{
 					var lat = data.pokestopLatitude*1E6
 					var lng = data.pokestopLongitude*1E6
-					var guid = lat.toString() + lng.toString()
+					var guid = lat.toString() + 's2-pogo' + lng.toString()
 					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType)
 					thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
 					pokestoppopup.close();
+					window.mapDataRequest.start();
 				}
 
 			});
@@ -4012,7 +4016,160 @@
 
 		}
 
+		function get_portal_details(){
+			/// PORTAL DETAIL //////////////////////////////////////
+			// code to retrieve the new portal detail data from the servers
+
+			// NOTE: the API for portal detailed information is NOT FINAL
+			// this is a temporary measure to get things working again after a major change to the intel map
+			// API. expect things to change here
+
+			var cache;
+			var requestQueue = {};
+			window.portalDetail = function() {}
+			;
+
+			window.portalDetail.setup = function() {
+				cache = new DataCache();
+
+				cache.startExpireInterval(20);
+			}
+
+			window.portalDetail.get = function(guid) {
+				return cache.get(guid);
+			}
+
+			window.portalDetail.isFresh = function(guid) {
+				return cache.isFresh(guid);
+			}
+
+
+			var handleResponse = function(deferred, guid, data, success) {
+				if (!data || data.error || !data.result) {
+					success = false;
+				}
+
+				if (success) {
+
+					var dict = decodeArray.portal(data.result, 'detailed');
+
+					// entity format, as used in map data
+					var ent = [guid, dict.timestamp, data.result];
+
+					cache.store(guid, dict);
+
+					//FIXME..? better way of handling sidebar refreshing...
+
+					if (guid == selectedPortal) {
+						renderPortalDetails(guid);
+					}
+
+					deferred.resolve(dict);
+					window.runHooks('portalDetailLoaded', {
+						guid: guid,
+						success: success,
+						details: dict,
+						ent: ent
+					});
+
+				} else {
+					if (data && data.error == "RETRY") {
+						// server asked us to try again
+						doRequest(deferred, guid);
+					} else {
+						deferred.reject();
+						window.runHooks('portalDetailLoaded', {
+							guid: guid,
+							success: success
+						});
+					}
+				}
+
+			}
+
+			var doRequest = function(deferred, guid) {
+				if(guid.includes('s2-pogo')){
+					if (!S2.db) return;
+					var transaction = S2.db.transaction("waypoints", "readonly");
+					var objectStore = transaction.objectStore("waypoints");
+					const request = objectStore.get(guid);
+					request.onerror = (event) => {
+
+					};
+					request.onsuccess = (event) => {
+						var data = {
+							"result": [
+								"p",
+								"N",
+								request.result.latE6,
+								request.result.lngE6,
+								1,
+								0,
+								0,
+								"https://via.placeholder.com/200x200?text=No+Image",
+								request.result.name,
+								[
+									"sc5_p"
+								],
+								false,
+								false,
+								null,
+								1673022098952,
+								[
+									null,
+									null,
+									null,
+									null
+								],
+								[],
+								"",
+								[
+									"",
+									"",
+									[]
+								]
+							]
+						};
+						handleResponse(deferred,guid,data,true)
+					};
+
+
+
+				} else{
+					window.postAjax('getPortalDetails', {
+						guid: guid
+					}, function(data, textStatus, jqXHR) {
+						handleResponse(deferred, guid, data, true);
+					}, function() {
+						handleResponse(deferred, guid, undefined, false);
+					});
+				}
+
+			}
+
+			window.portalDetail.request = function(guid) {
+				if (!requestQueue[guid]) {
+					var deferred = $.Deferred();
+					requestQueue[guid] = deferred.promise();
+					deferred.always(function() {
+						delete requestQueue[guid];
+					});
+
+					doRequest(deferred, guid);
+				}
+
+				return requestQueue[guid];
+			}
+
+		}
+
+
+
 		const setup = function () {
+			get_portal_details();
+			window.portalDetail.setup();
+			//xhrOpenInterceptor();
+			//xhrInterceptor();
 			thisPlugin.isSmart = window.isSmartphone();
 
 			initSvgIcon();
