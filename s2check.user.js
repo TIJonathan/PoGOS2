@@ -54,7 +54,7 @@
 
 	function wrapper(plugin_info) {
 		'use strict';
-
+		let pokestopCreation = false;
 		const d2r = Math.PI / 180.0;
 		const r2d = 180.0 / Math.PI;
 
@@ -2458,11 +2458,6 @@
 			fill: #2370DA;
 		}
 
-		path.pokestop-circle {
-			fill: #23FEF8;
-			stroke-width: 30px;
-			stroke: #2370DA;
-		}
 
 		.missingPhoto path.pokestop-circle {
 			stroke-width: 20px;
@@ -2649,6 +2644,61 @@
 		z-index: 452;
 		pointer-events: none;
 	}
+	.toggle-create-manual-pokestops{
+				box-shadow: 0 0 5px;
+				cursor:pointer;
+			    font-weight: bold;
+    			color: #000!important;
+				background-color: #fff;
+				border-bottom: 1px solid #ccc;
+				width: 26px;
+				height: 26px;
+				line-height: 26px;
+				text-decoration: none;
+				border-radius: 4px;
+				border-bottom: none;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				
+			}
+			.toggle-create-manual-pokestops:hover{
+				text-decoration:none;
+			}
+			.toggle-create-manual-pokestops.active{
+				background-color:#ffce00;
+			}
+			.toggle-create-manual-pokestops svg{
+			    max-height: 20px;
+    			max-width: 20px;
+			}
+			.pogo-s2-popup {
+				width:200px;
+			}
+			.pogo-s2-popup a {
+				color: #ffce00;
+			}
+
+
+			#submit-to-pogo-s2 {
+				position: relative;
+			}
+			#submit-to-pogo-s2 input,#submit-to-pogo-s2 select {
+				width: 100%;
+			}
+			#submit-to-pogo-s2 input {
+				color: #CCC;
+			}
+			#submit-to-pogo-s2 label {
+				margin-top: 5px;
+				display: block;
+				color: #fff;
+			}
+			#pogo-s2-manual-submit {
+				height: 30px;
+				margin-top: 10px;
+				width: 100%;
+			}
 
 	`).appendTo('head');
 		};
@@ -3780,6 +3830,188 @@
 			document.body.classList.toggle('smallpokestops', zoom < 16);
 		}
 
+		function createManualPokestops(){
+			L.Control.CreateMarkers = L.Control.extend({
+				onAdd: function(map) {
+					var button = L.DomUtil.create('a');
+					button.classList.add('toggle-create-manual-pokestops');
+					button.href = '#';
+					button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">\n' +
+						'\t\t\t\t\t\t\t<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>\n' +
+						'\t\t\t\t\t\t\t<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>\n' +
+						'\t\t\t\t\t\t\t<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>\n' +
+						'\t\t\t\t\t\t\t</svg>';
+					return button;
+				},
+
+				onRemove: function(map) {
+					// Nothing to do here
+				}
+			});
+
+			L.control.createmarkers = function(opts) {
+				return new L.Control.CreateMarkers(opts);
+			}
+
+			L.control.createmarkers({ position: 'topleft' }).addTo(map);
+			$('.toggle-create-manual-pokestops').on('click',function(e){
+				e.preventDefault();
+				e.stopPropagation();
+				$(this).toggleClass('active');
+				pokestopCreation = !pokestopCreation;
+				if (!pokestopCreation) {
+					map.closePopup();
+					map.removeLayer(editmarker);
+				}
+			});
+		}
+
+		//Based on code from jaiperdu cache-portals plugin
+		function openS2DB(){
+			var request = window.indexedDB.open("s2-pogo", 1);
+			request.onupgradeneeded = function (event) {
+				var db = event.target.result;
+				if (event.oldVersion < 1) {
+					var store = db.createObjectStore("waypoints", { keyPath: "guid" });
+					store.createIndex("latLngE6", ["latE6", "lngE6"], { unique: false });
+				}
+			};
+			request.onsuccess = function (event) {
+				S2.db = event.target.result
+			};
+			request.onerror = function (event) {
+				console.error("S2-Pogo: something went wrong", event);
+			};
+			return request;
+		}
+
+		function addStopToIndexDb(guid, lat, lng, name, type){
+			var waypoint = {
+				guid: guid,
+				team: window.TEAM_NONE,
+				latE6: lat,
+				lngE6: lng,
+				name: name,
+				type: type,
+				timestamp: Date.now()
+			};
+			putWaypoint(waypoint);
+		}
+
+		function putWaypoints(waypoints) {
+			if (!S2.db) return;
+
+			var transaction = S2.db.transaction("waypoints", "readwrite");
+			var store = transaction.objectStore("waypoints");
+			waypoints.forEach((waypoint) => store.put(waypoint));
+		}
+
+		function putWaypoint(waypoint) {
+			putWaypoints([waypoint]);
+		}
+
+		function pokestopMarkerClicked(event) {
+			if(pokestopCreation){
+				drawPokestopPopop(event.latlng);
+			}
+		}
+
+		function drawPokestopPopop(latlng) {
+			const pokestoppopup = L.popup();
+
+			let title = '';
+			let id = '';
+			let lat = '';
+			let lng = '';
+			let imageUrl = '';
+
+			lat = latlng.lat.toFixed(6);
+			lng = latlng.lng.toFixed(6);
+
+			pokestoppopup.setLatLng(latlng);
+
+
+			let formContent = `<div class="pogo-s2-popup"><form id="submit-to-pogo-s2">
+			<label>Type
+			<select name="pokestopType">
+				<option value="pokestops">Pokestop</option>
+				<option value="gyms">Gym</option>
+			</select>
+			</label>
+			<label>Title
+			<input name="pokestopTitle" type="text" autocomplete="off" placeholder="Title (required)" required value="${title}">
+			</label>
+			<label>Latitude
+			<input name="pokestopLatitude" type="text" autocomplete="off" placeholder="Latitude (required)" required value="${lat}">
+			</label>
+			<label>Longitude
+			<input name="pokestopLongitude" type="text" autocomplete="off" placeholder="Longitude (required)" required value="${lng}">
+			</label>
+			</div>
+			<button type="submit" id='pogo-s2-manual-submit'>Send</button>
+			</form>`;
+
+			pokestoppopup.setContent(formContent + '</div>');
+			pokestoppopup.openOn(map);
+
+			$('#pogo-s2-manual-submit').on('click',function(){
+				var form = document.querySelector('#submit-to-pogo-s2');
+				var data = Object.fromEntries(new FormData(form));
+				if(data.pokestopTitle === "" ){
+
+				} else{
+					var lat = data.pokestopLatitude*1E6
+					var lng = data.pokestopLongitude*1E6
+					var guid = lat.toString() + lng.toString()
+					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType)
+					thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
+					pokestoppopup.close();
+				}
+
+			});
+		}
+
+
+		function renderManualPokestops(data){
+			if (!S2.db) return;
+
+			var bounds = window.clampLatLngBounds(map.getBounds());
+
+			var transaction = S2.db.transaction("waypoints", "readonly");
+			var index = transaction.objectStore("waypoints").index("latLngE6");
+
+			var count = 0;
+			console.log("s2-pogo: inject portals");
+			index.getAll().onsuccess = function (event) {
+				var waypoints = event.target.result;
+				if (waypoints.length > 0) {
+					data.callback(
+						waypointData(waypoints,bounds),
+						"core"
+					);
+				}
+				count += waypoints.length;
+			};
+		}
+
+		function waypointData(waypoints,bounds){
+			var nelat = bounds.getNorthEast().lat*1E6;
+			var nelng = bounds.getNorthEast().lng*1E6;
+			var swlat = bounds.getSouthWest().lat*1E6;
+			var swlng = bounds.getSouthWest().lng*1E6;
+			var filterWaypoints = waypoints.filter(function(waypoint){
+				if(waypoint.latE6 < nelat && waypoint.latE6 > swlat && waypoint.lngE6 < nelng && waypoint.lngE6 > swlng){
+					return true;
+				}
+			});
+			return filterWaypoints.map((waypoint) => [
+					waypoint.guid,
+					waypoint.timestamp,
+					["p", waypoint.team, waypoint.latE6, waypoint.lngE6],
+				]);
+
+		}
+
 		const setup = function () {
 			thisPlugin.isSmart = window.isSmartphone();
 
@@ -3789,6 +4021,7 @@
 			window.addHook('pluginUserLocation', changeLocationCircle);
 
 			loadSettings();
+			openS2DB();
 
 			// NOTE: PoGOHWH Edition: Create panes just for our markers
 			map.createPane('pogoPaneNotinpogo');
@@ -3892,7 +4125,7 @@
 				}
 			});
 			map.on('zoomend', thisPlugin.resetAllMarkers);
-			map.on('moveend', thisPlugin.resetAllMarkers);
+			map.on('click', pokestopMarkerClicked);
 
 			// add ids to the links that we want to be able to hide
 			const links = document.querySelectorAll('#toolbox > a');
@@ -3905,7 +4138,8 @@
 					a.id = 'artifactLink';
 				}
 			});
-
+			createManualPokestops();
+			window.addHook('mapDataEntityInject',renderManualPokestops);
 		};
 
 		function createCounter(title, type, callback) {
