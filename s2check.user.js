@@ -572,7 +572,7 @@
 		const defaultSettings = {
 			highlightGymCandidateCells: true,
 			highlightGymCenter: false,
-			thisIsPogo: false,
+			thisIsPogo: true,
 			analyzeForMissingData: true,
 			centerMapOnClick: true,
 			grids: [
@@ -675,6 +675,7 @@
 			const tmp = localStorage[KEY_SETTINGS];
 			if (!tmp) {
 				loadOldSettings();
+				setThisIsPogo();
 				return;
 			}
 			try	{
