@@ -3924,13 +3924,14 @@
 		}
 
 
-		function addStopToIndexDb(guid, lat, lng, name, type){
+		function addStopToIndexDb(guid, lat, lng, name, type,image){
 			var waypoint = {
 				guid: guid,
 				team: window.TEAM_NONE,
 				latE6: lat,
 				lngE6: lng,
 				name: name,
+				image: image,
 				type: type,
 				timestamp: Date.now()
 			};
@@ -3959,7 +3960,6 @@
 			const pokestoppopup = L.popup();
 
 			let title = '';
-			let id = '';
 			let lat = '';
 			let lng = '';
 			let imageUrl = '';
@@ -3986,6 +3986,9 @@
 			<label>Longitude
 			<input name="pokestopLongitude" type="text" autocomplete="off" placeholder="Longitude (required)" required value="${lng}">
 			</label>
+			<label>Image Url
+			<input name="pokestopImageUrl" type="text" autocomplete="off" placeholder="http://?.googleusercontent.com/***" required value="${imageUrl}">
+			</label>
 			</div>
 			<button type="submit" id='pogo-s2-manual-submit'>Send</button>
 			</form>`;
@@ -4002,7 +4005,7 @@
 					var lat = data.pokestopLatitude*1E6
 					var lng = data.pokestopLongitude*1E6
 					var guid = lat.toString() + 's2-pogo' + lng.toString()
-					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType)
+					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType, data.pokestopImageUrl)
 					thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
 					pokestoppopup.close();
 					window.mapDataRequest.start();
@@ -4143,7 +4146,7 @@
 								1,
 								0,
 								0,
-								"https://via.placeholder.com/200x200?text=No+Image",
+								request.result.image !== "" ? request.result.image : "https://via.placeholder.com/200x200?text=No+Image",
 								request.result.name,
 								[],
 								false,
