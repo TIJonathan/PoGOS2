@@ -1779,7 +1779,7 @@
 						"<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label>"+
 					"<br></div>";
 					if(window.selectedPortal.includes('s2-pogo')){
-						modHtml+= "<div id='deleteManualPortal'><a href='#' onclick='window.deleteManualPortal()'>Delete Portal</a>";
+						modHtml+= "<div id='deleteManualWaypoint'><a href='#' onclick='window.deleteManualWaypoint()'>Delete Waypoint</a>";
 					}
 					$(portalDetails).append(modHtml);
 
@@ -1904,6 +1904,13 @@
 				updateMapGrid();
 			}
 		};
+		thisPlugin.deletePortalpogo = function(guid){
+			delete gyms[guid];
+			delete pokestops[guid];
+			delete notpogo[guid];
+
+			saveStorage();
+		}
 
 		// Add portal
 		thisPlugin.addPortalpogo = function (guid, lat, lng, name, type) {
@@ -3887,6 +3894,28 @@
 			};
 			return request;
 		}
+		window.deleteManualWaypoint = function(){
+			if (confirm("Are you sure you want to delete this waypoint?")) {
+				var guid = window.selectedPortal;
+				window.selectedPortal = '';
+				removeStopFromIndexDb(guid);
+				thisPlugin.deletePortalpogo(guid);
+				if(portals[guid] !== undefined){
+					portals[guid].remove();
+				}
+				portalAccessIndicator.remove()
+				$('#portaldetails').html('')
+				thisPlugin.resetAllMarkers();
+				updateMapGrid();
+			}
+		}
+
+		function removeStopFromIndexDb(guid) {
+			var transaction = S2.db.transaction("waypoints", "readwrite");
+			var store = transaction.objectStore("waypoints");
+			store.delete(guid);
+		}
+
 
 		function addStopToIndexDb(guid, lat, lng, name, type){
 			var waypoint = {
@@ -3970,6 +3999,7 @@
 					thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
 					pokestoppopup.close();
 					window.mapDataRequest.start();
+					updateMapGrid();
 				}
 
 			});
@@ -4108,9 +4138,7 @@
 								0,
 								"https://via.placeholder.com/200x200?text=No+Image",
 								request.result.name,
-								[
-									"sc5_p"
-								],
+								[],
 								false,
 								false,
 								null,
@@ -4168,8 +4196,6 @@
 		const setup = function () {
 			get_portal_details();
 			window.portalDetail.setup();
-			//xhrOpenInterceptor();
-			//xhrInterceptor();
 			thisPlugin.isSmart = window.isSmartphone();
 
 			initSvgIcon();
