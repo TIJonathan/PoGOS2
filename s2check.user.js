@@ -2711,6 +2711,12 @@
 				margin-top: 10px;
 				width: 100%;
 			}
+			
+			#deleteManualWaypoint a{
+			margin-left: 3px;
+    margin-bottom: 5px;
+    display: block;
+			}
 
 	`).appendTo('head');
 		};
