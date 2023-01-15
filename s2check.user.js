@@ -4318,6 +4318,7 @@
 				}
 			});
 			map.on('zoomend', thisPlugin.resetAllMarkers);
+			map.on('moveend', thisPlugin.resetAllMarkers);
 			map.on('click', pokestopMarkerClicked);
 
 			// add ids to the links that we want to be able to hide
