@@ -1780,7 +1780,7 @@
 						"<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label>"+
 					"<br></div>";
 					if(window.selectedPortal.includes('s2-pogo')){
-						modHtml+= "<div id='deleteManualWaypoint'><a href='#' onclick='window.deleteManualWaypoint()'>Delete Waypoint</a>";
+						modHtml+= "<a href='#' onclick='window.deleteManualWaypoint()' id='deleteManualWaypoint'>Delete Waypoint</a>";
 					}
 					$(portalDetails).append(modHtml);
 
@@ -2712,7 +2712,7 @@
 				width: 100%;
 			}
 			
-			#deleteManualWaypoint a{
+			a#deleteManualWaypoint{
 			margin-left: 3px;
     margin-bottom: 5px;
     display: block;
@@ -3854,11 +3854,11 @@
 					var button = L.DomUtil.create('a');
 					button.classList.add('toggle-create-manual-pokestops');
 					button.href = '#';
-					button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">\n' +
-						'\t\t\t\t\t\t\t<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>\n' +
-						'\t\t\t\t\t\t\t<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>\n' +
-						'\t\t\t\t\t\t\t<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>\n' +
-						'\t\t\t\t\t\t\t</svg>';
+					button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">' +
+						'<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>' +
+						'<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>' +
+						'<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>' +
+						'</svg>';
 					return button;
 				},
 
@@ -3991,27 +3991,24 @@
 			</label>
 			</div>
 			<button type="submit" id='pogo-s2-manual-submit'>Send</button>
-			</form>`;
+			</form></div>`;
 
-			pokestoppopup.setContent(formContent + '</div>');
+			pokestoppopup.setContent(formContent);
 			pokestoppopup.openOn(map);
 
 			$('#pogo-s2-manual-submit').on('click',function(){
 				var form = document.querySelector('#submit-to-pogo-s2');
 				var data = Object.fromEntries(new FormData(form));
-				if(data.pokestopTitle === "" ){
-
-				} else{
-					var lat = data.pokestopLatitude*1E6
-					var lng = data.pokestopLongitude*1E6
-					var guid = lat.toString() + 's2-pogo' + lng.toString()
-					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType, data.pokestopImageUrl)
+				if(data.pokestopTitle !== "" ){
+					var lat = data.pokestopLatitude*1E6;
+					var lng = data.pokestopLongitude*1E6;
+					var guid = lat.toString() + 's2-pogo' + lng.toString();
+					addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType, data.pokestopImageUrl);
 					thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
 					pokestoppopup.close();
 					window.mapDataRequest.start();
 					updateMapGrid();
 				}
-
 			});
 		}
 
@@ -4025,7 +4022,6 @@
 			var index = transaction.objectStore("waypoints").index("latLngE6");
 
 			var count = 0;
-			console.log("s2-pogo: inject portals");
 			index.getAll().onsuccess = function (event) {
 				var waypoints = event.target.result;
 				if (waypoints.length > 0) {
@@ -4058,11 +4054,7 @@
 
 		function get_portal_details(){
 			/// PORTAL DETAIL //////////////////////////////////////
-			// code to retrieve the new portal detail data from the servers
-
-			// NOTE: the API for portal detailed information is NOT FINAL
-			// this is a temporary measure to get things working again after a major change to the intel map
-			// API. expect things to change here
+			// Original from IITC Plugin
 
 			var cache;
 			var requestQueue = {};
