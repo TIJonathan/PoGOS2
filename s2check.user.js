@@ -4125,10 +4125,10 @@
 					var transaction = S2.db.transaction("waypoints", "readonly");
 					var objectStore = transaction.objectStore("waypoints");
 					const request = objectStore.get(guid);
-					request.onerror = (event) => {
-
-					};
 					request.onsuccess = (event) => {
+
+						//We are create a fake entry and injecting it into the IITC data. Most of the data is placeholder data required by IITC to work properly.
+						//We are mainly looking at Lat, Lng, Image, and Name as the important fields for displaying it on the Map.
 						var data = {
 							"result": [
 								"p",
@@ -4144,7 +4144,7 @@
 								false,
 								false,
 								null,
-								1673022098952,
+								Date.now(),
 								[
 									null,
 									null,
@@ -4162,9 +4162,6 @@
 						};
 						handleResponse(deferred,guid,data,true)
 					};
-
-
-
 				} else{
 					window.postAjax('getPortalDetails', {
 						guid: guid
