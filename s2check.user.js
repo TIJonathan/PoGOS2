@@ -3910,8 +3910,9 @@
 				if(portals[guid] !== undefined){
 					portals[guid].remove();
 				}
-				portalAccessIndicator.remove()
-				$('#portaldetails').html('')
+				portalAccessIndicator.remove();
+                                renderPortalDetails(null);
+                                if (isSmartphone()) { show('map') };
 				thisPlugin.resetAllMarkers();
 				updateMapGrid();
 			}
