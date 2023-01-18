@@ -3854,7 +3854,7 @@
 					var button = L.DomUtil.create('a');
 					button.classList.add('toggle-create-manual-pokestops');
 					button.href = '#';
-					button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">' +
+					button.innerHTML = '<svg height="20px" width="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">' +
 						'<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>' +
 						'<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>' +
 						'<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>' +
