@@ -54,7 +54,8 @@
 
 	function wrapper(plugin_info) {
 		'use strict';
-
+		let pokestopCreation = false;
+		let currentRequestUrl = '';
 		const d2r = Math.PI / 180.0;
 		const r2d = 180.0 / Math.PI;
 
@@ -548,6 +549,7 @@
 		let stopLayerGroup; // pokestops
 		let gymLayerGroup; // gyms
 		let notpogoLayerGroup; // not in PoGO
+		let manualLayerGroup; // manual
 		let nearbyLayerGroup; // circles to mark the too near limit
 		let gridLayerGroup; // s2 grid
 		let cellLayerGroup; // cell shading and borders
@@ -1768,17 +1770,20 @@
 						document.querySelector('.PogoStatus').innerHTML = thisPlugin.htmlStar;
 						$('.PogoStatus > a').attr('title', '');
 					}
-
-					$(portalDetails).append('<div class="PogoButtons">Pokemon Go: ' + thisPlugin.htmlStar + '</div>' +
-						`<div id="PogoGymInfo">
-						<label for='PogoGymMedal'>Medal:</label> <select id='PogoGymMedal'>
-								<option value='None'>None</option>
-								<option value='Bronze'>Bronze</option>
-								<option value='Silver'>Silver</option>
-								<option value='Gold'>Gold</option>
-								</select><br>
-						<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label><br>
-					</div>`);
+					var modHtml = "<div class='PogoButtons'>Pokemon Go: " + thisPlugin.htmlStar + "</div>"+
+						"<div id='PogoGymInfo'>" +
+						"<label for='PogoGymMedal'>Medal:</label> <select id='PogoGymMedal'>" +
+						"<option value='None'>None</option>" +
+						"<option value='Bronze'>Bronze</option>" +
+						"<option value='Silver'>Silver</option>" +
+						"<option value='Gold'>Gold</option>" +
+						"</select><br>" +
+						"<label>Is this an EX gym? <input type='checkbox' id='PogoGymEx'> Yes</label>"+
+					"<br></div>";
+					if(window.selectedPortal.includes('s2-pogo')){
+						modHtml+= "<a href='#' onclick='window.deleteManualWaypoint()' id='deleteManualWaypoint'>Delete Waypoint</a>";
+					}
+					$(portalDetails).append(modHtml);
 
 					document.getElementById('PogoGymMedal').addEventListener('change', ev => {
 						const guid = window.selectedPortal;
@@ -1901,6 +1906,13 @@
 				updateMapGrid();
 			}
 		};
+		thisPlugin.deletePortalpogo = function(guid){
+			delete gyms[guid];
+			delete pokestops[guid];
+			delete notpogo[guid];
+
+			saveStorage();
+		}
 
 		// Add portal
 		thisPlugin.addPortalpogo = function (guid, lat, lng, name, type) {
@@ -2450,41 +2462,11 @@
 			right: 0;
 		}
 
-		.pokestop {
-			opacity: 0.75;
-		}
-
-		.pokestop path,
-		.pokestop ellipse {
-			fill: #2370DA;
-		}
-
-		path.pokestop-circle {
-			fill: #23FEF8;
-			stroke-width: 30px;
-			stroke: #2370DA;
-		}
-
 		.missingPhoto path.pokestop-circle {
 			stroke-width: 20px;
 			fill: white;
 			opacity: 0.5;
 		}
-
-		.smallpokestops .pokestop {
-			opacity: 0.85;
-			pointer-events: none;
-		}
-
-		.smallpokestops path.pokestop-pole,
-		.smallpokestops ellipse.pokestop-base {
-			display: none;
-		}
-
-		.smallpokestops .pokestop svg {
-			transform: translateY(20px) scale(0.8);
-		}
-
 		.PogoClassification div {
 			display: grid;
 			grid-template-columns: 200px 60px 60px 60px;
@@ -2650,6 +2632,67 @@
 		z-index: 452;
 		pointer-events: none;
 	}
+	.toggle-create-manual-pokestops{
+				box-shadow: 0 0 5px;
+				cursor:pointer;
+			    font-weight: bold;
+    			color: #000!important;
+				background-color: #fff;
+				border-bottom: 1px solid #ccc;
+				width: 26px;
+				height: 26px;
+				line-height: 26px;
+				text-decoration: none;
+				border-radius: 4px;
+				border-bottom: none;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				
+			}
+			.toggle-create-manual-pokestops:hover{
+				text-decoration:none;
+			}
+			.toggle-create-manual-pokestops.active{
+				background-color:#ffce00;
+			}
+			.toggle-create-manual-pokestops svg{
+			    max-height: 20px;
+    			max-width: 20px;
+			}
+			.pogo-s2-popup {
+				width:200px;
+			}
+			.pogo-s2-popup a {
+				color: #ffce00;
+			}
+
+
+			#submit-to-pogo-s2 {
+				position: relative;
+			}
+			#submit-to-pogo-s2 input,#submit-to-pogo-s2 select {
+				width: 100%;
+			}
+			#submit-to-pogo-s2 input {
+				color: #CCC;
+			}
+			#submit-to-pogo-s2 label {
+				margin-top: 5px;
+				display: block;
+				color: #fff;
+			}
+			#pogo-s2-manual-submit {
+				height: 30px;
+				margin-top: 10px;
+				width: 100%;
+			}
+			
+			a#deleteManualWaypoint{
+			margin-left: 3px;
+    margin-bottom: 5px;
+    display: block;
+			}
 
 	`).appendTo('head');
 		};
@@ -2724,6 +2767,9 @@
 		 * Draw a 20m circle around a portal
 		 */
 		function addNearbyCircle(guid) {
+			if(nearbyCircles[guid]){
+				return;
+			}
 			const portal = window.portals[guid];
 			if (!portal)
 				return;
@@ -3781,7 +3827,365 @@
 			document.body.classList.toggle('smallpokestops', zoom < 16);
 		}
 
+		function createManualPokestops(){
+			L.Control.CreateMarkers = L.Control.extend({
+				onAdd: function(map) {
+					var button = L.DomUtil.create('a');
+					button.classList.add('toggle-create-manual-pokestops');
+					button.href = '#';
+					button.innerHTML = '<svg height="20px" width="20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 821.52 1461.152">' +
+						'<path class="pokestop-circle" d="M410.76 0C203.04.14 30.93 152.53 0 351.61l211.27.39c26.99-84.43 106.09-145.55 199.49-145.6 93.25.11 172.24 61.13 199.33 145.41l211.2.19C790.58 152.8 618.51.26 410.76 0zm0 280c-75.11 0-136 60.89-136 136s60.89 136 136 136 136-60.89 136-136-60.89-136-136-136zM.23 480c30.71 199.2 202.78 351.74 410.53 352 207.72-.14 379.83-152.53 410.76-351.61L610.25 480c-26.99 84.43-106.09 145.55-199.49 145.6-93.25-.11-172.24-61.13-199.33-145.41z"/>' +
+						'<path class="pokestop-pole" d="M380.387 818.725h65.085v465.159h-65.085z" stroke-width="4.402"/>' +
+						'<ellipse class="pokestop-base" cx="415.185" cy="1345.949" rx="305.686" ry="115.202" stroke-width="6"/>' +
+						'</svg>';
+					return button;
+				},
+
+				onRemove: function(map) {
+					// Nothing to do here
+				}
+			});
+
+			L.control.createmarkers = function(opts) {
+				return new L.Control.CreateMarkers(opts);
+			}
+
+			L.control.createmarkers({ position: 'topleft' }).addTo(map);
+			$('.toggle-create-manual-pokestops').on('click',function(e){
+				e.preventDefault();
+				e.stopPropagation();
+				$(this).toggleClass('active');
+				pokestopCreation = !pokestopCreation;
+				if (!pokestopCreation) {
+					map.closePopup();
+				}
+			});
+		}
+
+		//Based on code from jaiperdu cache-portals plugin
+		function openS2DB(){
+			var request = window.indexedDB.open("s2-pogo", 1);
+			request.onupgradeneeded = function (event) {
+				var db = event.target.result;
+				if (event.oldVersion < 1) {
+					var store = db.createObjectStore("waypoints", { keyPath: "guid" });
+					store.createIndex("latLngE6", ["latE6", "lngE6"], { unique: false });
+				}
+			};
+			request.onsuccess = function (event) {
+				S2.db = event.target.result
+			};
+			request.onerror = function (event) {
+				console.error("S2-Pogo: something went wrong", event);
+			};
+			return request;
+		}
+		window.deleteManualWaypoint = function(){
+			if (confirm("Are you sure you want to delete this waypoint?")) {
+				var guid = window.selectedPortal;
+				window.selectedPortal = '';
+				removeStopFromIndexDb(guid);
+				thisPlugin.deletePortalpogo(guid);
+				removeManualStop(guid);
+				if(portals[guid] !== undefined){
+					portals[guid].remove();
+				}
+				portalAccessIndicator.remove();
+				renderPortalDetails(null);
+				if (isSmartphone()) { show('map') };
+				thisPlugin.resetAllMarkers();
+				updateMapGrid();
+			}
+		}
+
+		function removeManualStop(guid){
+			for(const value in manualLayerGroup._layers){
+				if(manualLayerGroup._layers[value].options.guid === guid){
+					manualLayerGroup.removeLayer(value);
+				}
+			}
+		}
+
+		function removeStopFromIndexDb(guid) {
+			var transaction = S2.db.transaction("waypoints", "readwrite");
+			var store = transaction.objectStore("waypoints");
+			store.delete(guid);
+		}
+
+
+		function addStopToIndexDb(guid, lat, lng, name, type,image){
+			var waypoint = {
+				guid: guid,
+				team: window.TEAM_NONE,
+				latE6: lat,
+				lngE6: lng,
+				name: name,
+				image: image,
+				type: type,
+				timestamp: Date.now()
+			};
+			putWaypoint(waypoint);
+		}
+
+		function putWaypoints(waypoints) {
+			if (!S2.db) return;
+
+			var transaction = S2.db.transaction("waypoints", "readwrite");
+			var store = transaction.objectStore("waypoints");
+			waypoints.forEach((waypoint) => store.put(waypoint));
+		}
+
+		function putWaypoint(waypoint) {
+			putWaypoints([waypoint]);
+		}
+
+		function pokestopMarkerClicked(event) {
+			if(pokestopCreation){
+				drawPokestopPopop(event.latlng);
+			}
+		}
+
+		function drawPokestopPopop(latlng) {
+			window.pokestoppopup = L.popup();
+
+			let title = '';
+			let lat = '';
+			let lng = '';
+			let imageUrl = '';
+
+			lat = latlng.lat.toFixed(6);
+			lng = latlng.lng.toFixed(6);
+
+			window.pokestoppopup.setLatLng(latlng);
+
+
+			let formContent = `<div class="pogo-s2-popup"><form id="submit-to-pogo-s2">
+			<label>Type
+			<select name="pokestopType">
+				<option value="pokestops">Pokestop</option>
+				<option value="gyms">Gym</option>
+			</select>
+			</label>
+			<label>Title
+			<input name="pokestopTitle" type="text" autocomplete="off" placeholder="Title (required)" required value="${title}">
+			</label>
+			<label>Latitude
+			<input name="pokestopLatitude" type="text" autocomplete="off" placeholder="Latitude (required)" required value="${lat}">
+			</label>
+			<label>Longitude
+			<input name="pokestopLongitude" type="text" autocomplete="off" placeholder="Longitude (required)" required value="${lng}">
+			</label>
+			<label>Image Url
+			<input name="pokestopImageUrl" type="text" autocomplete="off" placeholder="http://?.googleusercontent.com/***" value="${imageUrl}">
+			</label>
+			<button type="button" id='pogo-s2-manual-submit' onclick="window.submitNewStop()">Send</button>
+			</form></div>`;
+
+			window.pokestoppopup.setContent(formContent);
+			window.pokestoppopup.openOn(map);
+		}
+
+		window.submitNewStop = function(){
+			var form = document.querySelector('#submit-to-pogo-s2');
+			var data = Object.fromEntries(new FormData(form));
+			if(data.pokestopTitle !== "" ){
+				var lat = data.pokestopLatitude*1E6;
+				var lng = data.pokestopLongitude*1E6;
+				var guid = 's2-pogo' + lat.toString() + lng.toString() + getRandomArbitrary(1,100000);
+				addStopToIndexDb(guid, lat, lng, data.pokestopTitle, data.pokestopType, data.pokestopImageUrl);
+				thisPlugin.addPortalpogo(guid, data.pokestopLatitude, data.pokestopLongitude, data.pokestopTitle, data.pokestopType);
+				window.pokestoppopup.close();
+				window.mapDataRequest.start();
+				updateMapGrid();
+			}
+		}
+
+		function getRandomArbitrary(min, max) {
+			return Math.random() * (max - min) + min;
+		}
+
+
+		function renderManualPokestops(data){
+			if (!S2.db) return;
+
+			var bounds = window.clampLatLngBounds(map.getBounds());
+
+			var transaction = S2.db.transaction("waypoints", "readonly");
+			var index = transaction.objectStore("waypoints").index("latLngE6");
+
+			var count = 0;
+			index.getAll().onsuccess = function (event) {
+				var waypoints = event.target.result;
+				if (waypoints.length > 0) {
+					data.callback(
+						waypointData(waypoints,bounds),
+						"core"
+					);
+				}
+				count += waypoints.length;
+			};
+		}
+
+		function waypointData(waypoints,bounds){
+			var nelat = bounds.getNorthEast().lat*1E6;
+			var nelng = bounds.getNorthEast().lng*1E6;
+			var swlat = bounds.getSouthWest().lat*1E6;
+			var swlng = bounds.getSouthWest().lng*1E6;
+			var filterWaypoints = waypoints.filter(function(waypoint){
+				if(waypoint.latE6 < nelat && waypoint.latE6 > swlat && waypoint.lngE6 < nelng && waypoint.lngE6 > swlng){
+					return true;
+				}
+			});
+			return filterWaypoints.map((waypoint) => [
+					waypoint.guid,
+					waypoint.timestamp,
+					["p", waypoint.team, waypoint.latE6, waypoint.lngE6],
+				]);
+
+		}
+
+		function get_portal_details(){
+			/// PORTAL DETAIL //////////////////////////////////////
+			// Original from IITC Plugin
+
+			var cache;
+			var requestQueue = {};
+			window.portalDetail = function() {}
+			;
+
+			window.portalDetail.setup = function() {
+				cache = new DataCache();
+
+				cache.startExpireInterval(20);
+			}
+
+			window.portalDetail.get = function(guid) {
+				return cache.get(guid);
+			}
+
+			window.portalDetail.isFresh = function(guid) {
+				return cache.isFresh(guid);
+			}
+
+
+			var handleResponse = function(deferred, guid, data, success) {
+				if (!data || data.error || !data.result) {
+					success = false;
+				}
+
+				if (success) {
+
+					var dict = decodeArray.portal(data.result, 'detailed');
+
+					// entity format, as used in map data
+					var ent = [guid, dict.timestamp, data.result];
+
+					cache.store(guid, dict);
+
+					//FIXME..? better way of handling sidebar refreshing...
+
+					if (guid == selectedPortal) {
+						renderPortalDetails(guid);
+					}
+
+					deferred.resolve(dict);
+					window.runHooks('portalDetailLoaded', {
+						guid: guid,
+						success: success,
+						details: dict,
+						ent: ent
+					});
+
+				} else {
+					if (data && data.error == "RETRY") {
+						// server asked us to try again
+						doRequest(deferred, guid);
+					} else {
+						deferred.reject();
+						window.runHooks('portalDetailLoaded', {
+							guid: guid,
+							success: success
+						});
+					}
+				}
+
+			}
+
+			var doRequest = function(deferred, guid) {
+				if(guid.includes('s2-pogo')){
+					if (!S2.db) return;
+					var transaction = S2.db.transaction("waypoints", "readonly");
+					var objectStore = transaction.objectStore("waypoints");
+					const request = objectStore.get(guid);
+					request.onsuccess = (event) => {
+
+						//We are create a fake entry and injecting it into the IITC data. Most of the data is placeholder data required by IITC to work properly.
+						//We are mainly looking at Lat, Lng, Image, and Name as the important fields for displaying it on the Map.
+						var data = {
+							"result": [
+								"p",
+								"N",
+								request.result.latE6,
+								request.result.lngE6,
+								1,
+								0,
+								0,
+								request.result.image !== "" ? request.result.image : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIBAMAAABfdrOtAAAAG1BMVEXMzMyWlpacnJyjo6O+vr63t7exsbGqqqrFxcVz+1s1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABw0lEQVR4nO3VwW6bQBSF4WMMNkvuYAcvZ6JK6dJIqeQlVl/A5AlC+gLFqy4halU/du+4pKmrKq06gW7OJzSSjTS/8MxggIiIiIiIiIiIiIiIiIiIiIiIiF6T2/rh+fPMjhFZTRHJp4i4aoJIvZ0gEq3PkfeyGyJR1hY45hXSo7nVbx6KKENS3nQBkcT4SCJiqiFS3LhjUW7wKE4qLEWOGVoRGxBBedAhukobO0RM15tuUaD56K/9m1iy2FRf1yGRvdWhucd8NUTW0CvNUXboLdoDmmy5Aa5DIvMr/zgd4mKIbKAXDE7wkVLHLNLd0YZEYqODLn2aD5EMemkEXz7oQugDzLKZqC4ggvbe+Snxa2QuprX+TpT1PlKFRPrN75+kue1mfr18ZHc6nf654edYFpdr8hRx56Opd/TnssDnoEgql7vrKaI/VG3RHFBn/p77w0wvR9CIbtrnc/LjSapEF75fxe58ToqwSCT+xH9f2J8itZEHg4XI9fnEvw2LJHL57hoiC/cu0Q18lz9aLILeXX9jZsedX1/CFfbbsSP1LnaHsSOR/gmM3UBayqfRI0A3QYOIiIiIiIiIiIiIiIiIiIj+l2+5NjuNk5m9MgAAAABJRU5ErkJggg==",
+								request.result.name,
+								[],
+								false,
+								false,
+								null,
+								Date.now(),
+								[
+									null,
+									null,
+									null,
+									null
+								],
+								[],
+								"",
+								[
+									"",
+									"",
+									[]
+								]
+							]
+						};
+						handleResponse(deferred,guid,data,true)
+					};
+				} else{
+					window.postAjax('getPortalDetails', {
+						guid: guid
+					}, function(data, textStatus, jqXHR) {
+						handleResponse(deferred, guid, data, true);
+					}, function() {
+						handleResponse(deferred, guid, undefined, false);
+					});
+				}
+
+			}
+
+			window.portalDetail.request = function(guid) {
+				if (!requestQueue[guid]) {
+					var deferred = $.Deferred();
+					requestQueue[guid] = deferred.promise();
+					deferred.always(function() {
+						delete requestQueue[guid];
+					});
+
+					doRequest(deferred, guid);
+				}
+
+				return requestQueue[guid];
+			}
+
+		}
+		//Save old Portal Add Method to be reused below
+
 		const setup = function () {
+			get_portal_details();
+			window.portalDetail.setup();
 			thisPlugin.isSmart = window.isSmartphone();
 
 			initSvgIcon();
@@ -3790,6 +4194,7 @@
 			window.addHook('pluginUserLocation', changeLocationCircle);
 
 			loadSettings();
+			openS2DB();
 
 			// NOTE: PoGOHWH Edition: Create panes just for our markers
 			map.createPane('pogoPaneNotinpogo');
@@ -3852,6 +4257,8 @@
 			window.addLayerGroup('Not in PoGO', notpogoLayerGroup, true);
 			regionLayer = L.layerGroup();
 			window.addLayerGroup('S2 Grid', regionLayer, true);
+			manualLayerGroup = L.layerGroup();
+			window.addLayerGroup('Manual Stops', manualLayerGroup, true);
 
 			// this layer will group all the nearby circles that are added or removed from it when the portals are added or removed
 			nearbyLayerGroup = L.featureGroup();
@@ -3894,6 +4301,7 @@
 			});
 			map.on('zoomend', thisPlugin.resetAllMarkers);
 			map.on('moveend', thisPlugin.resetAllMarkers);
+			map.on('click', pokestopMarkerClicked);
 
 			// add ids to the links that we want to be able to hide
 			const links = document.querySelectorAll('#toolbox > a');
@@ -3906,7 +4314,18 @@
 					a.id = 'artifactLink';
 				}
 			});
+			createManualPokestops();
+			window.addHook('mapDataEntityInject',renderManualPokestops);
 
+			window.Render.prototype.oldAddPortalToMapLayer = window.Render.prototype.addPortalToMapLayer;
+			//Override Portal Add method only for manual stops.
+			window.Render.prototype.addPortalToMapLayer = function(portal) {
+				if(portal.options.guid.includes('s2-pogo')){
+					manualLayerGroup.addLayer(portal);
+				} else{
+					window.Render.prototype.oldAddPortalToMapLayer(portal);
+				}
+			}
 		};
 
 		function createCounter(title, type, callback) {
