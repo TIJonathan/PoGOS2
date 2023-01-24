@@ -1,0 +1,19 @@
+default:
+    image: node:18-alpine
+
+eslint:
+    script:
+        - npm ci
+        - npx eslint --format gitlab s2check.user.js
+    artifacts:
+        reports:
+            codequality: gl-codequality.json
+
+prettier:
+    script:
+        - npm ci
+        - npx prettier --check s2check.user.js
+    artifacts:
+        reports:
+            codequality: gl-codequality.json
+
