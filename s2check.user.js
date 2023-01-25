@@ -7,7 +7,7 @@
 // @updateURL    https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.101
+// @version      0.102
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://intel.ingress.com/*
