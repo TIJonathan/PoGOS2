@@ -7,7 +7,7 @@
 // @updateURL    https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.102
+// @version      0.103
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://intel.ingress.com/*
@@ -2350,6 +2350,12 @@
                 <a onclick="window.plugin.pogo.optReset();return false;" title="Deletes all Pokemon Go markers">Reset PoGo portals</a>
                 <a onclick="window.plugin.pogo.optImport();return false;" title="Import a JSON file with all the PoGo data">Import Gyms & Pokestops</a>
                 <a onclick="window.plugin.pogo.optExport();return false;" title="Exports a JSON file with all the PoGo data">Export Gyms & Pokestops</a>
+                <div class="stop_counts">
+                <div><span>Gyms:</span>${Object.keys(gyms).length}</div>
+                <div><span>Pokestops:</span>${
+                    Object.keys(pokestops).length
+                }</div>
+                </div>
                 </div>`
 
             const container = dialog({
@@ -3160,6 +3166,19 @@
             margin-left: 3px;
     margin-bottom: 5px;
     display: block;
+            }
+            .stop_counts{
+                width: 80%;
+                text-align: left;
+                margin-left: auto;
+                margin-right: auto;
+                color: #ffce00;
+                line-height: 20px;
+            }
+            .stop_counts span{
+            width:75px;
+            display:inline-block;
+            font-weight:700;
             }
 
     `
