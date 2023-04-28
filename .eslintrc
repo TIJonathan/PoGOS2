@@ -12,7 +12,8 @@
             "error",
             4,
             {
-                "SwitchCase": 1
+                "SwitchCase": 1,
+                "ignoredNodes": ["TemplateLiteral *"]
             }
         ],
         "no-throw-literal": "off",
