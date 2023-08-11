@@ -36,7 +36,7 @@ In iOS:
 - Click User Scripts
 - Click +
 - Paste [this url](https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js)
-- Sarch the plugin list for "Pogo" and enable it.
+- Search the plugin list for "Pogo" and enable it.
 
 ## Features
 In IITC there are two links added to the side pane, one shows the actions available with the Pokemon data and the other allows you to change the settings of the plugin.
