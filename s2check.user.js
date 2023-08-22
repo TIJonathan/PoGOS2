@@ -7,7 +7,7 @@
 // @updateURL    https://gitlab.com/NvlblNm/pogo-s2/raw/master/s2check.user.js
 // @homepageURL  https://gitlab.com/NvlblNm/pogo-s2/
 // @supportURL   https://twitter.com/PogoCells
-// @version      0.103
+// @version      0.104
 // @description  Pokemon Go tools over IITC. News on https://twitter.com/PogoCells
 // @author       Alfonso M.
 // @match        https://intel.ingress.com/*
@@ -812,7 +812,6 @@
 
             // migrate key
             localStorage.removeItem('s2check_settings')
-            saveStorage()
         }
 
         function resetColors() {
@@ -1934,7 +1933,12 @@
                                         this.valueAsNumber === 0)
                                 portal.photos = this.valueAsNumber
                                 updateScore(portal, wrapper)
-                                saveStorage()
+                                // any item getting photos edited should be a pokestop
+                                updateItemInObjectStoreStore(
+                                    S2.db,
+                                    POKESTOPS,
+                                    portal
+                                )
                                 if (update) {
                                     refreshPokestopMissingPhotoStatus(portal)
                                     updateMapGrid()
@@ -1945,7 +1949,12 @@
                             .addEventListener('input', function () {
                                 portal.votes = this.valueAsNumber
                                 updateScore(portal, wrapper)
-                                saveStorage()
+                                // any item getting votes edited should be a pokestop
+                                updateItemInObjectStoreStore(
+                                    S2.db,
+                                    POKESTOPS,
+                                    portal
+                                )
                             })
                     }
 
@@ -1989,18 +1998,11 @@
         const KEY_STORAGE = 'plugin-pogo'
         const KEY_SETTINGS = 'plugin-pogo-settings'
 
-        // Update the localStorage
-        function saveStorage() {
-            createThrottledTimer('saveStorage', function () {
-                localStorage[KEY_STORAGE] = JSON.stringify({
-                    gyms: cleanUpExtraData(gyms),
-                    pokestops: cleanUpExtraData(pokestops),
-                    notpogo: cleanUpExtraData(notpogo),
-                    ignoredCellsExtraGyms,
-                    ignoredCellsMissingGyms
-                })
-            })
-        }
+        const GYMS = 'gyms'
+        const POKESTOPS = 'pokestops'
+        const NOTPOGO = 'notpogo'
+        const EXTRA_GYMS = 'ignoredCellsExtraGyms'
+        const MISSING_GYMS = 'ignoredCellsMissingGyms'
 
         /**
          * Create a new object where the extra properties of each pokestop/gym have been removed. Store only the minimum.
@@ -2008,43 +2010,232 @@
         function cleanUpExtraData(group) {
             const newGroup = {}
             Object.keys(group).forEach((id) => {
-                const data = group[id]
-                const newData = {
-                    guid: data.guid,
-                    lat: data.lat,
-                    lng: data.lng,
-                    name: data.name
-                }
-
-                if (data.isEx) {
-                    newData.isEx = data.isEx
-                }
-
-                if (data.medal) {
-                    newData.medal = data.medal
-                }
-
-                if (typeof data.photos !== 'undefined') {
-                    newData.photos = data.photos
-                }
-
-                if (data.votes) {
-                    newData.votes = data.votes
-                }
-
-                newGroup[id] = newData
+                newGroup[id] = cleanUpSingleItem(group[id])
             })
             return newGroup
         }
 
-        // Load the localStorage
-        thisPlugin.loadStorage = function () {
-            const tmp = JSON.parse(localStorage[KEY_STORAGE] || '{}')
-            gyms = tmp.gyms || {}
-            pokestops = tmp.pokestops || {}
-            notpogo = tmp.notpogo || {}
-            ignoredCellsExtraGyms = tmp.ignoredCellsExtraGyms || {}
-            ignoredCellsMissingGyms = tmp.ignoredCellsMissingGyms || {}
+        function cleanUpSingleItem(data) {
+            const newData = {
+                guid: data.guid,
+                lat: data.lat,
+                lng: data.lng,
+                name: data.name
+            }
+
+            // TODO: What prevents just setting these in the new object?
+            if (data.isEx) {
+                newData.isEx = data.isEx
+            }
+
+            if (data.medal) {
+                newData.medal = data.medal
+            }
+
+            if (typeof data.photos !== 'undefined') {
+                newData.photos = data.photos
+            }
+
+            if (data.votes) {
+                newData.votes = data.votes
+            }
+
+            return newData
+        }
+
+        /**
+         * Add a JSON object to an object store with a defined keyPath
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to add item to
+         * @param {*} item to add
+         */
+        function addItemToObjectStore(db, objectStoreName, item) {
+            addItemsToObjectStore(db, objectStoreName, [item])
+        }
+
+        /**
+         * Add a JSON object to an object store with a defined keyPath
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to add item to
+         * @param {*} items to add
+         */
+        function addItemsToObjectStore(
+            db,
+            objectStoreName,
+            items,
+            itemSuccessCallback
+        ) {
+            const tx = db.transaction(objectStoreName, 'readwrite')
+            tx.onabort = (e) => {
+                console.log('txaborted!')
+                console.log(e)
+            }
+            tx.onerror = (e) => {
+                console.log('txerror!')
+                console.log(e)
+            }
+            const os = tx.objectStore(objectStoreName)
+
+            let successCount = 0
+            let lastAdd
+            if (items.length === 0) {
+                itemSuccessCallback(objectStoreName + ': nothing to import!')
+            }
+            items.forEach((item) => {
+                lastAdd = os.add(item)
+
+                lastAdd.onsuccess = (e) => {
+                    successCount++
+                    if (itemSuccessCallback && successCount % 2500 === 0) {
+                        itemSuccessCallback(
+                            objectStoreName + ': ' + successCount
+                        )
+                    }
+                }
+            })
+            if (lastAdd) {
+                lastAdd.onsuccess = (e) => {
+                    if (itemSuccessCallback) {
+                        itemSuccessCallback(objectStoreName + ': completed!')
+                    }
+                }
+            }
+            if (tx.commit) {
+                tx.commit()
+            }
+
+            return tx
+        }
+
+        /**
+         * Set a flag in an object store
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to set a flag in
+         * @param {*} key to flag
+         */
+        function setKeyInObjectStore(db, objectStoreName, key) {
+            db.transaction(objectStoreName, 'readwrite')
+                .objectStore(objectStoreName)
+                .add(key, key)
+        }
+
+        /**
+         * Update a JSON object in an object store with a defined keyPath
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to update item in
+         * @param {*} item to update
+         */
+        function updateItemInObjectStoreStore(db, objectStoreName, item) {
+            db.transaction(objectStoreName, 'readwrite')
+                .objectStore(objectStoreName)
+                .put(item)
+        }
+
+        /**
+         * Delete an object from an object store
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to remove the item from
+         * @param {*} key to remove
+         */
+        function deleteFromObjectStore(db, objectStoreName, key) {
+            db.transaction(objectStoreName, 'readwrite')
+                .objectStore(objectStoreName)
+                .delete(key)
+        }
+
+        /**
+         * Create an object store and load it from the provided data using the loader function
+         * @param {*} db to create the object store in
+         * @param {*} objectStoreName to create if it does not exist
+         * @param {*} keyPath to apply to the object store, or null to require explicit keys
+         * @param {*} data to provide to the loader
+         * @param {*} loader to update the object store
+         */
+        function createAndLoadObjectStore(
+            db,
+            objectStoreName,
+            keyPath,
+            data,
+            loader
+        ) {
+            if (!db.objectStoreNames.contains(objectStoreName)) {
+                const objectStore = db.createObjectStore(objectStoreName, {
+                    keyPath
+                })
+                objectStore.transaction.addEventListener(
+                    'complete',
+                    (event) => {
+                        const tx = db.transaction(objectStoreName, 'readwrite')
+                        const store = tx.objectStore(objectStoreName)
+
+                        loader.apply(this, [store, data])
+
+                        if (tx.commit) {
+                            tx.commit()
+                        }
+                    }
+                )
+            }
+        }
+
+        /**
+         * Obtain all entries from an object store and load it using the loader function
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to retrieve the data from
+         * @param {*} loader to process the retrieved data
+         */
+        function loadAllFromObjectStore(db, objectStoreName, loader) {
+            // prettier is not happy with just setting this function
+            const onSuccess = (event) => {
+                const result = event.target.result
+                if (result) {
+                    loader.apply(this, [result])
+                }
+                thisPlugin.resetAllMarkers()
+            }
+            db
+                .transaction(objectStoreName)
+                .objectStore(objectStoreName)
+                .getAll().onsuccess = onSuccess
+        }
+
+        function loadPogoS2Data(db) {
+            loadAllFromObjectStore(db, GYMS, (all) =>
+                all.forEach((gym) => {
+                    gyms[gym.guid] = gym
+                })
+            )
+            loadAllFromObjectStore(db, POKESTOPS, (all) =>
+                all.forEach((pokestop) => {
+                    pokestops[pokestop.guid] = pokestop
+                })
+            )
+            loadAllFromObjectStore(db, NOTPOGO, (all) =>
+                all.forEach((nothing) => {
+                    notpogo[nothing.guid] = nothing
+                })
+            )
+            loadAllFromObjectStore(db, EXTRA_GYMS, (all) =>
+                all.forEach((ignoredCell) => {
+                    ignoredCellsExtraGyms[ignoredCell] = true
+                })
+            )
+            loadAllFromObjectStore(db, MISSING_GYMS, (all) =>
+                all.forEach((ignoredCell) => {
+                    ignoredCellsMissingGyms[ignoredCell] = true
+                })
+            )
+        }
+
+        /**
+         * Delete all entries from an object store
+         * @param {*} db containing the object store
+         * @param {*} objectStoreName to remove all data from
+         */
+        function deleteAllFromObjectStore(db, objectStoreName) {
+            db.transaction(objectStoreName, 'readwrite')
+                .objectStore(objectStoreName)
+                .clear()
         }
 
         thisPlugin.createEmptyStorage = function () {
@@ -2053,7 +2244,11 @@
             notpogo = {}
             ignoredCellsExtraGyms = {}
             ignoredCellsMissingGyms = {}
-            saveStorage()
+            deleteAllFromObjectStore(S2.db, GYMS)
+            deleteAllFromObjectStore(S2.db, POKESTOPS)
+            deleteAllFromObjectStore(S2.db, NOTPOGO)
+            deleteAllFromObjectStore(S2.db, EXTRA_GYMS)
+            deleteAllFromObjectStore(S2.db, MISSING_GYMS)
 
             allPortals = {}
             newPortals = {}
@@ -2066,13 +2261,13 @@
 
         thisPlugin.findByGuid = function (guid) {
             if (gyms[guid]) {
-                return { type: 'gyms', store: gyms }
+                return { type: GYMS, store: gyms }
             }
             if (pokestops[guid]) {
-                return { type: 'pokestops', store: pokestops }
+                return { type: POKESTOPS, store: pokestops }
             }
             if (notpogo[guid]) {
-                return { type: 'notpogo', store: notpogo }
+                return { type: NOTPOGO, store: notpogo }
             }
             return null
         }
@@ -2140,7 +2335,11 @@
                                 )
                             }
                             gyms[guid].medal = ev.target.value
-                            saveStorage()
+                            updateItemInObjectStoreStore(
+                                S2.db,
+                                GYMS,
+                                gyms[guid]
+                            )
                             // update gym marker
                             if (icon) {
                                 icon.classList.add(gyms[guid].medal + 'Medal')
@@ -2155,7 +2354,11 @@
                                 'gym' + guid.replace('.', '')
                             )
                             gyms[guid].isEx = ev.target.checked
-                            saveStorage()
+                            updateItemInObjectStoreStore(
+                                S2.db,
+                                GYMS,
+                                gyms[guid]
+                            )
                             // update gym marker
                             if (icon) {
                                 icon.classList[
@@ -2180,10 +2383,10 @@
             // If current portal is into pogo: select pogo portal from portals list and select the star
             const pogoData = thisPlugin.findByGuid(guid)
             if (pogoData) {
-                if (pogoData.type === 'pokestops') {
+                if (pogoData.type === POKESTOPS) {
                     $('.pogoStop').addClass('favorite')
                 }
-                if (pogoData.type === 'gyms') {
+                if (pogoData.type === GYMS) {
                     $('.pogoGym').addClass('favorite')
                     document
                         .getElementById('portaldetails')
@@ -2195,27 +2398,30 @@
                     }
                     document.getElementById('PogoGymEx').checked = gym.isEx
                 }
-                if (pogoData.type === 'notpogo') {
+                if (pogoData.type === NOTPOGO) {
                     $('.notPogo').addClass('favorite')
                 }
             }
         }
 
         function removePogoObject(type, guid) {
-            if (type === 'pokestops') {
+            if (type === POKESTOPS) {
                 delete pokestops[guid]
+                deleteFromObjectStore(S2.db, POKESTOPS, guid)
                 const starInLayer = stopLayers[guid]
                 stopLayerGroup.removeLayer(starInLayer)
                 delete stopLayers[guid]
             }
-            if (type === 'gyms') {
+            if (type === GYMS) {
                 delete gyms[guid]
+                deleteFromObjectStore(S2.db, GYMS, guid)
                 const gymInLayer = gymLayers[guid]
                 gymLayerGroup.removeLayer(gymInLayer)
                 delete gymLayers[guid]
             }
-            if (type === 'notpogo') {
+            if (type === NOTPOGO) {
                 delete notpogo[guid]
+                deleteFromObjectStore(S2.db, NOTPOGO, guid)
                 const notpogoInLayer = notpogoLayers[guid]
                 notpogoLayerGroup.removeLayer(notpogoInLayer)
                 delete notpogoLayers[guid]
@@ -2237,7 +2443,6 @@
                 const existingType = pogoData.type
                 removePogoObject(existingType, guid)
 
-                saveStorage()
                 thisPlugin.updateStarPortal()
 
                 // Get portal name and coordinates
@@ -2253,11 +2458,8 @@
                     )
                 }
                 // we've changed one item from pogo, if the cell was marked as ignored, reset it.
-                if (
-                    (type === 'gyms' || existingType === 'gyms') &&
+                if (type === GYMS || existingType === GYMS) {
                     updateExtraGymsCells(ll.lat, ll.lng)
-                ) {
-                    saveStorage()
                 }
             } else {
                 // If portal isn't saved in pogo: Add this pogo
@@ -2279,16 +2481,23 @@
             }
         }
         thisPlugin.deletePortalpogo = function (guid) {
-            delete gyms[guid]
-            delete pokestops[guid]
-            delete notpogo[guid]
-
-            saveStorage()
+            if (gyms[guid]) {
+                delete gyms[guid]
+                deleteFromObjectStore(S2.db, GYMS, guid)
+            }
+            if (pokestops[guid]) {
+                delete pokestops[guid]
+                deleteFromObjectStore(S2.db, POKESTOPS, guid)
+            }
+            if (notpogo[guid]) {
+                delete notpogo[guid]
+                deleteFromObjectStore(S2.db, NOTPOGO, guid)
+            }
         }
 
         // Add portal
         thisPlugin.addPortalpogo = function (guid, lat, lng, name, type) {
-            // Add pogo in the localStorage
+            // Add pogo in the idb
             const obj = { guid, lat, lng, name }
 
             // prevent that it would trigger the missing portal detection if it's in our data
@@ -2296,18 +2505,20 @@
                 obj.exists = true
             }
 
-            if (type === 'gyms') {
+            if (type === GYMS) {
                 updateExtraGymsCells(lat, lng)
                 gyms[guid] = obj
+                addItemToObjectStore(S2.db, GYMS, cleanUpSingleItem(obj))
             }
-            if (type === 'pokestops') {
+            if (type === POKESTOPS) {
                 pokestops[guid] = obj
+                addItemToObjectStore(S2.db, POKESTOPS, cleanUpSingleItem(obj))
             }
-            if (type === 'notpogo') {
+            if (type === NOTPOGO) {
                 notpogo[guid] = obj
+                addItemToObjectStore(S2.db, NOTPOGO, cleanUpSingleItem(obj))
             }
 
-            saveStorage()
             thisPlugin.updateStarPortal()
 
             thisPlugin.addStar(guid, lat, lng, name, type)
@@ -2331,10 +2542,12 @@
             const cellId = cell.toString()
             if (ignoredCellsExtraGyms[cellId]) {
                 delete ignoredCellsExtraGyms[cellId]
+                deleteFromObjectStore(S2.db, EXTRA_GYMS, cellId)
                 return true
             }
             if (ignoredCellsMissingGyms[cellId]) {
                 delete ignoredCellsMissingGyms[cellId]
+                deleteFromObjectStore(S2.db, MISSING_GYMS, cellId)
                 return true
             }
             return false
@@ -2475,67 +2688,102 @@
         }
 
         thisPlugin.optExport = function () {
-            saveToFile(localStorage[KEY_STORAGE], 'IITC-pogo.json')
+            saveToFile(
+                JSON.stringify({
+                    gyms,
+                    pokestops,
+                    notpogo,
+                    ignoredCellsExtraGyms,
+                    ignoredCellsMissingGyms
+                }),
+                'IITC-pogo.json'
+            )
         }
 
         thisPlugin.optImport = function () {
             readFromFile(function (content) {
                 try {
+                    const promises = []
                     const list = JSON.parse(content) // try to parse JSON first
-                    const importExStatus = true
-                    const importGymMedal = true
                     Object.keys(list).forEach((type) => {
-                        for (const idpogo in list[type]) {
-                            const item = list[type][idpogo]
-                            const lat = item.lat
-                            const lng = item.lng
-                            const name = item.name
-                            let guid = item.guid
-                            if (!guid) {
-                                guid = findPortalGuidByPositionE6(
-                                    lat * 1e6,
-                                    lng * 1e6
-                                )
-                                if (!guid) {
-                                    console.log(
-                                        'portal guid not found',
-                                        name,
-                                        lat,
-                                        lng
-                                    ) // eslint-disable-line no-console
-                                    guid = idpogo
-                                }
+                        if (
+                            type === 'ignoredCellsExtraGyms' ||
+                            type === 'ignoredCellsMissingGyms'
+                        ) {
+                            const closureAccess = {
+                                ignoredCellsExtraGyms,
+                                ignoredCellsMissingGyms
                             }
-
-                            if (
-                                typeof lat !== 'undefined' &&
-                                typeof lng !== 'undefined' &&
-                                name &&
-                                !thisPlugin.findByGuid(guid)
-                            ) {
-                                thisPlugin.addPortalpogo(
-                                    guid,
-                                    lat,
-                                    lng,
-                                    name,
-                                    type
-                                )
-                                if (type === 'gyms') {
-                                    if (importExStatus && item.isEx) {
-                                        gyms[guid].isEx = true
-                                    }
-                                    // don't overwrite existing medals
-                                    if (importGymMedal && !gyms[guid].medal) {
-                                        gyms[guid].medal = item.medal
-                                    }
-                                }
+                            for (const id in list[type]) {
+                                setKeyInObjectStore(S2.db, type, id)
+                                closureAccess[type][id] = true
                             }
+                            return
                         }
+
+                        const itemsToAddForType = Object.keys(list[type])
+                            .map((k) => list[type][k])
+                            .map((item) => {
+                                const lat = item.lat
+                                const lng = item.lng
+                                const name = item.name
+                                let guid = item.guid
+                                if (!guid) {
+                                    guid = findPortalGuidByPositionE6(
+                                        lat * 1e6,
+                                        lng * 1e6
+                                    )
+                                    if (!guid) {
+                                        console.log(
+                                            'portal guid not found',
+                                            name,
+                                            lat,
+                                            lng
+                                        ) // eslint-disable-line no-console
+                                        guid = idpogo
+                                    }
+                                }
+                                return item
+                            })
+                            .filter((item) => {
+                                const lat = item.lat
+                                const lng = item.lng
+                                const guid = item.guid
+                                const name = item.name
+                                if (
+                                    typeof lat !== 'undefined' &&
+                                    typeof lng !== 'undefined' &&
+                                    name &&
+                                    !thisPlugin.findByGuid(guid)
+                                ) {
+                                    return true
+                                }
+                                return false
+                            })
+
+                        console.log(
+                            'adding ' +
+                                itemsToAddForType.length +
+                                ' items to ' +
+                                type
+                        )
+                        promises.push(
+                            addItemsToObjectStore(
+                                S2.db,
+                                type,
+                                itemsToAddForType,
+                                (message) =>
+                                    thisPlugin.optAlert('Importing ' + message)
+                            )
+                        )
                     })
 
-                    thisPlugin.updateStarPortal()
-                    thisPlugin.resetAllMarkers()
-                    thisPlugin.optAlert('Successful.')
+                    Promise.all(promises).then(() => {
+                        loadPogoS2Data(S2.db)
+                        thisPlugin.updateStarPortal()
+                        thisPlugin.resetAllMarkers()
+                    })
+                    thisPlugin.optAlert('Import started...')
                 } catch (e) {
                     console.warn('pogo: failed to import data: ' + e) // eslint-disable-line no-console
                     thisPlugin.optAlert(
@@ -2547,7 +2795,6 @@
 
         thisPlugin.optReset = function () {
             if (confirm('All pogo will be deleted. Are you sure?', '')) {
-                delete localStorage[KEY_STORAGE]
                 thisPlugin.createEmptyStorage()
                 thisPlugin.updateStarPortal()
                 thisPlugin.resetAllMarkers()
@@ -2585,9 +2832,9 @@
                 }
             }
 
-            iterateStore(notpogo, 'notpogo')
-            iterateStore(gyms, 'gyms')
-            iterateStore(pokestops, 'pokestops')
+            iterateStore(notpogo, NOTPOGO)
+            iterateStore(gyms, GYMS)
+            iterateStore(pokestops, POKESTOPS)
         }
 
         thisPlugin.resetAllMarkers = function () {
@@ -2633,7 +2880,7 @@
             let star
             // Note: PoGOHWH Edition: Pokéstop and Gym markers just use CircleMarkers
             const m = navigator.userAgent.match(/Android.*Mobile/) ? 1.5 : 1.0 // Note: the isIITCm() implementation here does not work on IITC-CE-m at least
-            if (type === 'pokestops') {
+            if (type === POKESTOPS) {
                 const pokestop = pokestops[guid]
                 const hasPhoto =
                     typeof pokestop.photos === 'undefined' ||
@@ -2653,7 +2900,7 @@
                     pane: 'pogoPaneStops'
                 })
             }
-            if (type === 'gyms') {
+            if (type === GYMS) {
                 const gym = gyms[guid]
                 star = new L.circleMarker([lat, lng], {
                     title: name,
@@ -2670,7 +2917,7 @@
                     pane: 'pogoPaneGyms'
                 })
             }
-            if (type === 'notpogo') {
+            if (type === NOTPOGO) {
                 star = new L.circleMarker([lat, lng], {
                     title: name,
                     radius: 6 * m,
@@ -2695,15 +2942,15 @@
                 }
             })
 
-            if (type === 'pokestops') {
+            if (type === POKESTOPS) {
                 stopLayers[guid] = star
                 star.addTo(stopLayerGroup)
             }
-            if (type === 'gyms') {
+            if (type === GYMS) {
                 gymLayers[guid] = star
                 star.addTo(gymLayerGroup)
             }
-            if (type === 'notpogo') {
+            if (type === NOTPOGO) {
                 notpogoLayers[guid] = star
                 star.addTo(notpogoLayerGroup)
             }
@@ -3417,7 +3664,7 @@
                 notClassifiedPokestops.push(data.notClassified)
             })
 
-            updateCounter('pokestops', Object.values(newPokestops))
+            updateCounter(POKESTOPS, Object.values(newPokestops))
             updateCounter('classification', notClassifiedPokestops)
             updateMissingPortalsCount()
 
@@ -3516,9 +3763,9 @@
 
             if (cellsWithMissingGyms.length > 0) {
                 const filtered = filterWithinScreen(cellsWithMissingGyms)
-                updateCounter('gyms', Object.values(filtered))
+                updateCounter(GYMS, Object.values(filtered))
             } else {
-                updateCounter('gyms', [])
+                updateCounter(GYMS, [])
             }
         }
 
@@ -3568,7 +3815,7 @@
                             delete newPokestops[portal.guid]
                             skippedPortals[portal.guid] = true
                         })
-                        updateCounter('pokestops', Object.values(newPokestops))
+                        updateCounter(POKESTOPS, Object.values(newPokestops))
                     },
                     'Mark all as Pokestops': function () {
                         container.dialog('close')
@@ -3583,13 +3830,13 @@
                                 portal.lat,
                                 portal.lng,
                                 portal.name,
-                                'pokestops'
+                                POKESTOPS
                             )
                         })
                         if (settings.highlightGymCandidateCells) {
                             updateMapGrid()
                         }
-                        updateCounter('pokestops', Object.values(newPokestops))
+                        updateCounter(POKESTOPS, Object.values(newPokestops))
                     }
                 }
             })
@@ -3619,7 +3866,7 @@
                 if (pending === 0) {
                     container.dialog('close')
                 }
-                updateCounter('pokestops', Object.values(newPokestops))
+                updateCounter(POKESTOPS, Object.values(newPokestops))
             })
 
             configureHoverMarker(container)
@@ -3761,7 +4008,6 @@
                         movedPortals.length = 0
                         updateCounter('moved', movedPortals)
 
-                        saveStorage()
                         if (settings.highlightGymCandidateCells) {
                             updateMapGrid()
                         }
@@ -3775,7 +4021,6 @@
                 const portal = row.dataPortal
                 movePogo(portal, row.dataPogoGuid)
 
-                saveStorage()
                 if (settings.highlightGymCandidateCells) {
                     updateMapGrid()
                 }
@@ -3805,7 +4050,7 @@
 
             const existingType = pogoData.type
             let gym = null
-            if (existingType === 'gyms') {
+            if (existingType === GYMS) {
                 gym = pogoData.store[guid]
             }
 
@@ -3825,8 +4070,7 @@
             if (gym != null) {
                 pogoData.store[guid].isEx = gym.isEx
                 pogoData.store[guid].medal = gym.medal
-
-                saveStorage()
+                updateItemInObjectStoreStore(S2.db, GYMS, pogoData.store[guid])
 
                 const icon = document.getElementById(
                     'gym' + guid.replace('.', '')
@@ -3880,7 +4124,6 @@
 
                 // remove marker
                 removePogoObject(existingType, guid)
-                saveStorage()
 
                 if (settings.highlightGymCandidateCells) {
                     updateMapGrid()
@@ -4094,7 +4337,7 @@
             }
 
             const cellData = groups.shift()
-            updateCounter('gyms', groups)
+            updateCounter(GYMS, groups)
 
             let missingGyms = computeMissingGyms(cellData)
 
@@ -4146,15 +4389,18 @@
                     // Button to allow skip this cell
                     'There is no Gym': function () {
                         ignoredCellsMissingGyms[cellData.cell.toString()] = true
+                        setKeyInObjectStore(
+                            S2.db,
+                            MISSING_GYMS,
+                            cellData.cell.toString()
+                        )
 
                         if (settings.highlightGymCandidateCells) {
                             updateMapGrid()
                         }
                         container.dialog('close')
 
-                        saveStorage()
-
-                        updateCounter('gyms', groups)
+                        updateCounter(GYMS, groups)
                         // continue
                         promptToClassifyGyms(groups)
                     }
@@ -4171,7 +4417,7 @@
                 const guid = row.getAttribute('data-guid')
                 const portal = pokestops[guid]
 
-                removePogoObject('pokestops', guid)
+                removePogoObject(POKESTOPS, guid)
 
                 thisPlugin.addPortalpogo(
                     guid,
@@ -4243,14 +4489,13 @@
                     // Button to allow skip this cell
                     'All are OK': function () {
                         ignoredCellsExtraGyms[cellId] = true
+                        deleteFromObjectStore(S2.db, EXTRA_GYMS, cellId)
 
                         if (settings.highlightGymCandidateCells) {
                             updateMapGrid()
                         }
                         container.dialog('close')
                         delete cellsExtraGyms[cellId]
-
-                        saveStorage()
 
                         updateCounter('extraGyms', Object.keys(cellsExtraGyms))
                         // continue
@@ -4532,7 +4777,14 @@
 
         // Based on code from jaiperdu cache-portals plugin
         function openS2DB() {
-            const request = window.indexedDB.open('s2-pogo', 1)
+            const version = 2
+            const request = window.indexedDB.open('s2-pogo', version)
+            request.onblocked = (event) => {
+                if (event.target.result.version !== version) {
+                    event.target.result.close()
+                    openS2DB()
+                }
+            }
             request.onupgradeneeded = function (event) {
                 const db = event.target.result
                 if (event.oldVersion < 1) {
@@ -4543,9 +4795,89 @@
                         unique: false
                     })
                 }
+                if (event.oldVersion < 2) {
+                    // We may be migrating from local storage
+                    const tmp = JSON.parse(localStorage[KEY_STORAGE] || '{}')
+
+                    // We have a bunch of stores to create and load with data from localstorage, if applicable
+                    const upgradeDb = event.currentTarget.result
+                    createAndLoadObjectStore(
+                        upgradeDb,
+                        GYMS,
+                        'guid',
+                        tmp,
+                        (os, data) => {
+                            Object.keys(data.gyms || {}).forEach((gym) => {
+                                os.add(data.gyms[gym])
+                                gyms[gym] = data.gyms[gym]
+                            })
+                        }
+                    )
+                    createAndLoadObjectStore(
+                        upgradeDb,
+                        POKESTOPS,
+                        'guid',
+                        tmp,
+                        (os, data) => {
+                            Object.keys(data.pokestops || {}).forEach(
+                                (pokestop) => {
+                                    os.add(data.pokestops[pokestop])
+                                    pokestops[pokestop] =
+                                        data.pokestops[pokestop]
+                                }
+                            )
+                        }
+                    )
+                    createAndLoadObjectStore(
+                        upgradeDb,
+                        NOTPOGO,
+                        'guid',
+                        tmp,
+                        (os, data) => {
+                            Object.keys(data.notpogo || {}).forEach(
+                                (nothing) => {
+                                    os.add(data.notpogo[nothing])
+                                    notpogo[nothing] = data.notpogo[nothing]
+                                }
+                            )
+                        }
+                    )
+                    createAndLoadObjectStore(
+                        upgradeDb,
+                        EXTRA_GYMS,
+                        null,
+                        tmp,
+                        (os, data) => {
+                            Object.keys(
+                                data.ignoredCellsExtraGyms || {}
+                            ).forEach((ignoredCell) => {
+                                os.add(ignoredCell, ignoredCell)
+                                ignoredCellsExtraGyms[ignoredCell] = true
+                            })
+                        }
+                    )
+                    createAndLoadObjectStore(
+                        upgradeDb,
+                        MISSING_GYMS,
+                        null,
+                        tmp,
+                        (os, data) => {
+                            Object.keys(
+                                data.ignoredCellsMissingGyms || {}
+                            ).forEach((ignoredCell) => {
+                                os.add(ignoredCell, ignoredCell)
+                                ignoredCellsMissingGyms[ignoredCell] = true
+                            })
+                        }
+                    )
+                }
+                // TODO: At some point we should:
+                // localStorage.removeItem(KEY_STORAGE)
             }
             request.onsuccess = function (event) {
                 S2.db = event.target.result
+                console.log('pogo-s2 idb opened successfully')
+                loadPogoS2Data(S2.db)
             }
             request.onerror = function (event) {
                 console.error('S2-Pogo: something went wrong', event)
@@ -4557,7 +4889,7 @@
             if (confirm('Are you sure you want to delete this waypoint?')) {
                 const guid = window.selectedPortal
                 window.selectedPortal = ''
-                removeStopFromIndexDb(guid)
+                removeManualStopFromIndexDb(guid)
                 thisPlugin.deletePortalpogo(guid)
                 removeManualStop(guid)
                 if (portals[guid] !== undefined) {
@@ -4581,7 +4913,7 @@
             }
         }
 
-        function removeStopFromIndexDb(guid) {
+        function removeManualStopFromIndexDb(guid) {
             const transaction = S2.db.transaction('waypoints', 'readwrite')
             const store = transaction.objectStore('waypoints')
             store.delete(guid)
@@ -4877,15 +5209,13 @@
             window.addHook('pluginUserLocation', changeLocationCircle)
 
             loadSettings()
+            // Loads data from storage
             openS2DB()
 
             // NOTE: PoGOHWH Edition: Create panes just for our markers
             map.createPane('pogoPaneNotinpogo')
             map.createPane('pogoPaneStops')
             map.createPane('pogoPaneGyms')
-
-            // Load data from localStorage
-            thisPlugin.loadStorage()
 
             thisPlugin.htmlStar = `<a class="pogoStop" accesskey="p" onclick="window.plugin.pogo.switchStarPortal('pokestops');return false;" title="Mark this portal as a pokestop [p]"><span></span></a>
                 <a class="pogoGym" accesskey="g" onclick="window.plugin.pogo.switchStarPortal('gyms');return false;" title="Mark this portal as a PokeGym [g]"><span></span></a>
@@ -4910,11 +5240,7 @@
             }
 
             sidebarPogo.appendChild(
-                createCounter(
-                    'New wayspots',
-                    'pokestops',
-                    promptForNewPokestops
-                )
+                createCounter('New wayspots', POKESTOPS, promptForNewPokestops)
             )
             sidebarPogo.appendChild(
                 createCounter(
@@ -4934,7 +5260,7 @@
                 )
             )
             sidebarPogo.appendChild(
-                createCounter('New Gyms', 'gyms', promptToClassifyGyms)
+                createCounter('New Gyms', GYMS, promptToClassifyGyms)
             )
             sidebarPogo.appendChild(
                 createCounter(
@@ -4950,6 +5276,7 @@
             window.addHook('mapDataRefreshStart', function () {
                 sidebarPogo.classList.add('refreshingData')
             })
+
             window.addHook('mapDataRefreshEnd', function () {
                 sidebarPogo.classList.remove('refreshingData')
                 refreshNewPortalsCounter()
