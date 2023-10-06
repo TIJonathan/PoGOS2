@@ -1,12 +1,8 @@
 # Pogo-Tools
-This is script to that tries to help finding out info about Pokestops and Gyms in Pokemon Go. Is is a plugin for IITC to run in https://ingress.com/intel, you need an Ingress account and IITC already installed.
-
-# PoGO Tools, PoGOHWH Edition, Merged Edition
-
->  This is a fork of [AlfonsoML's Pogo-Tools](https://gitlab.com/AlfonsoML/pogo-s2/) (which no longer exists because wayfarer isn't healthy for you - please, turn back now), for [IITC-CE](https://iitc.app/). It merges the PoGOHWH fork of that plugin back in, making rendering large numbers of pokethings possible, while removing some of the charm.
+Mark Pokestops and Gyms in Pokemon Go using IITC for [Ingress Intel](https://ingress.com/intel) with your Ingress account. Render two layers of s2 cell grid. Mark pogo-only locations. A fork of [AlfonsoML's Pogo-Tools](https://gitlab.com/AlfonsoML/pogo-s2/) (which no longer exists because wayfarer isn't healthy for you - please, turn back now), for [IITC-CE](https://iitc.app/) with the PoGOHWH changes, making rendering large numbers of pokethings possible, while removing some of the charm.
 
 ## Pre-requisites
-  1. An Ingress account. You don't have to play the game, just install it once and create and account, after you have everything configured you can un-install the game if you want to.
+  1. An Ingress account. Optionally, you can get 40 more nominations if you get to level 10 as Enlightened.
   2. Verify that you can login in https://intel.ingress.com
   3.
 * For PC, install [Tampermonkey](https://tampermonkey.net/) on your browser of choice. Then install  [IITC-CE](https://iitc.app/build/release/total-conversion-build.user.js).
